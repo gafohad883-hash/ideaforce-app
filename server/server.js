@@ -20,7 +20,6 @@ const buildPath = fs.existsSync(path.join(clientPath, 'build'))
 
 console.log(`📂 Serving static files from: ${buildPath}`);
 
-// הגשת הקבצים הסטטיים
 if (fs.existsSync(buildPath)) {
     app.use(express.static(buildPath));
 }
@@ -30,13 +29,18 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connection Successful: MongoDB Connected!"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// --- הגדרת המייל ---
+// --- הגדרת המייל המאובטחת (התיקון החדש) ---
 const MANAGER_EMAIL = 'gafohad883@gmail.com';
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, 
   auth: {
     user: MANAGER_EMAIL,
     pass: 'wtka uqnc dncw nnsh' 
+  },
+  tls: {
+    rejectUnauthorized: false 
   }
 });
 
@@ -97,12 +101,12 @@ app.post("/api/suggestions", async (req, res) => {
     await newSuggestion.save();
 
     const mailOptions = {
-        from: `IdeaForce System <${MANAGER_EMAIL}>`,
+        from: `"IdeaForce System" <${MANAGER_EMAIL}>`,
         to: MANAGER_EMAIL,
         subject: `🔔 הצעה חדשה התקבלה: ${req.body.title}`,
         text: `היי המפקדת,\n\nהתקבלה הצעה חדשה במערכת!\n\nמגיש: ${req.body.soldier.soldierName}\nנושא: ${req.body.title}\n\nהיכנסי למערכת לטיפול.`
     };
-    transporter.sendMail(mailOptions, (err) => { if (err) console.log("Mail error:", err); });
+    transporter.sendMail(mailOptions, (err) => { if (err) console.log("Mail error (Post):", err); });
 
     res.status(201).json(newSuggestion);
   } catch (err) {
@@ -123,12 +127,12 @@ app.patch("/api/suggestions/:id/status", async (req, res) => {
 
     if (suggestion.soldier?.email && suggestion.soldier.email.includes('@')) {
         const mailOptions = {
-            from: `מערכת IdeaForce <${MANAGER_EMAIL}>`,
+            from: `"מערכת IdeaForce" <${MANAGER_EMAIL}>`,
             to: suggestion.soldier.email,
             subject: `עדכון סטטוס להצעתך: ${suggestion.title}`,
             text: `שלום ${suggestion.soldier.soldierName},\n\nהסטטוס של הצעת הייעול שלך ("${suggestion.title}") עודכן ל: ${status}.\n\nבברכה,\nצוות IdeaForce (גף אוהד)`
         };
-        transporter.sendMail(mailOptions, (err) => { if (err) console.log("Mail error:", err); });
+        transporter.sendMail(mailOptions, (err) => { if (err) console.log("Mail error (Patch):", err); });
     }
     res.json(suggestion);
   } catch (err) {
@@ -148,20 +152,15 @@ app.delete("/api/suggestions/:id", async (req, res) => {
     }
 });
 
-// --- התיקון הקריטי כאן: שימוש ב-Regex במקום כוכבית ---
 app.get(/.*/, (req, res) => {
   const indexPath = path.join(buildPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send(`
-      <h1>Error: Build folder not found</h1>
-      <p>Server looked in: ${buildPath}</p>
-      <p>Please check Render logs to see if 'npm run build' succeeded.</p>
-    `);
+    res.status(404).send("Build folder not found. Check Render logs.");
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server & Client running together on Port ${PORT}`);
+  console.log(`🚀 IdeaForce Server Running on Port ${PORT}`);
 });
