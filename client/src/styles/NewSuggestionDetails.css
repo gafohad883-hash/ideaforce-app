@@ -1,0 +1,104 @@
+/* src/styles/NewSuggestionDetails.css */
+.details-container {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+}
+
+.details-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.details-card {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 600px; /* קצת יותר רחב כי יש הרבה מלל */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-family: inherit;
+  resize: vertical;
+  background: #f9f9f9;
+}
+
+textarea:focus {
+  border-color: #0052a3;
+  outline: none;
+}
+
+.row-group {
+  display: flex;
+  gap: 15px;
+}
+
+.half {
+  flex: 1;
+}
+
+.submit-btn {
+  background-color: #28a745; /* ירוק להצלחה */
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+}
+
+.submit-btn:disabled {
+  background-color: #ccc;
+}
+
+.error-text {
+  color: red;
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+/* מודאל (קופץ) */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  max-width: 300px;
+}
+
+.modal h3 {
+  color: #d9534f;
+  margin-top: 0;
+}
+
+.modal button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #0052a3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}

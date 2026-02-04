@@ -1,0 +1,68 @@
+/* src/styles/SuggestionSuccess.css */
+.success-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.success-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.success-icon {
+  background-color: #d4edda;
+  color: #155724;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.5rem;
+  margin: 0 auto 20px;
+}
+
+.success-card h2 {
+  color: #0b1f33;
+  margin-bottom: 10px;
+}
+
+.success-card p {
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.success-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.success-primary-btn {
+  background-color: #0052a3;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.success-secondary-btn {
+  background-color: white;
+  color: #0052a3;
+  border: 1px solid #0052a3;
+  padding: 12px;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+}

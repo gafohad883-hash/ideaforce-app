@@ -1,0 +1,101 @@
+/* src/styles/SoldierSuggestions.css */
+.mysug-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mysug-header {
+  padding: 20px;
+  text-align: center;
+  color: white;
+}
+
+.mysug-content {
+  flex: 1;
+  background: #f4f5f7;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* תיבת חיפוש */
+.search-box input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 50px;
+  border: 1px solid #ddd;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* רשימת כרטיסים */
+.suggestions-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-bottom: 20px;
+}
+
+.suggestion-card-mini {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-right: 4px solid transparent;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.suggestion-card-mini h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.card-info {
+  display: flex;
+  gap: 15px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* צבעי סטטוס */
+.card-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+.status-gray { background: #eee; color: #555; border-right: 4px solid #aaa; }
+.status-blue { background: #e3f2fd; color: #1976d2; border-right: 4px solid #1976d2; }
+.status-green { background: #d4edda; color: #155724; border-right: 4px solid #155724; }
+.status-red { background: #f8d7da; color: #721c24; border-right: 4px solid #721c24; }
+
+.back-home-btn {
+  background: #0052a3;
+  color: white;
+  padding: 15px;
+  border-radius: 50px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.no-data, .loading-text {
+  text-align: center;
+  color: #888;
+  margin-top: 30px;
+}

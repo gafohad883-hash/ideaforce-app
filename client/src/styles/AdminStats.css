@@ -1,0 +1,100 @@
+.stats-page {
+    min-height: 100vh;
+    background-color: #f0f2f5;
+    direction: rtl;
+    padding-bottom: 50px;
+}
+
+.stats-header {
+    background: linear-gradient(135deg, #0b1f33 0%, #1f2f3f 100%);
+    color: white;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stats-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+}
+
+.back-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* כרטיסי סיכום (KPI) */
+.kpi-container {
+    display: flex;
+    gap: 20px;
+    padding: 30px 40px;
+    justify-content: space-between;
+}
+
+.kpi-card {
+    background: white;
+    flex: 1;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    text-align: center;
+    border-top: 5px solid #ddd;
+}
+
+.kpi-card.blue { border-top-color: #0088FE; }
+.kpi-card.green { border-top-color: #00C49F; }
+.kpi-card.orange { border-top-color: #FFBB28; }
+.kpi-card.purple { border-top-color: #AF19FF; }
+
+.kpi-card h3 {
+    margin: 0;
+    color: #666;
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+.kpi-number {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #333;
+    margin-top: 10px;
+}
+
+/* רשת הגרפים */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* חצי חצי */
+    gap: 30px;
+    padding: 0 40px;
+}
+
+.chart-large-card {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    height: 450px; /* גובה קבוע ומרשים */
+}
+
+.chart-large-card h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #0b1f33;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}

@@ -1,0 +1,93 @@
+/* src/styles/SoldierHome.css */
+.home-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-header {
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+}
+
+.home-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 1px;
+}
+
+.home-subtitle {
+  margin: 5px 0 0;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+.home-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.home-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.home-title {
+  color: #0b1f33;
+  margin-top: 0;
+}
+
+.home-text {
+  color: #555;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.home-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.home-primary-btn {
+  background-color: #0052a3; /* כחול צבאי */
+  color: white;
+  border: none;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.home-secondary-btn {
+  background-color: white;
+  color: #0052a3;
+  border: 2px solid #0052a3;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.home-primary-btn:active, .home-secondary-btn:active {
+  transform: scale(0.98);
+}
+
+.home-footer {
+  text-align: center;
+  padding: 15px;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+}
