@@ -4,7 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const path = require('path');
-const fs = require('fs'); // הוספנו מודול למערכת הקבצים
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,12 +14,11 @@ app.use(express.json());
 
 // --- ה"בלש" החכם: מציאת תיקיית האתר ---
 const clientPath = path.join(__dirname, '../client');
-// בודק אם קיימת תיקיית build, ואם לא - מחפש תיקיית dist
 const buildPath = fs.existsSync(path.join(clientPath, 'build')) 
     ? path.join(clientPath, 'build') 
     : path.join(clientPath, 'dist');
 
-console.log(`📂 Serving static files from: ${buildPath}`); // לוג בשרת כדי שנראה מה קורה
+console.log(`📂 Serving static files from: ${buildPath}`);
 
 // הגשת הקבצים הסטטיים
 if (fs.existsSync(buildPath)) {
@@ -31,7 +30,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connection Successful: MongoDB Connected!"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// --- הגדרת המייל (השולח והמקבל) ---
+// --- הגדרת המייל ---
 const MANAGER_EMAIL = 'gafohad883@gmail.com';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -97,7 +96,6 @@ app.post("/api/suggestions", async (req, res) => {
     });
     await newSuggestion.save();
 
-    // התראה למנהל
     const mailOptions = {
         from: `IdeaForce System <${MANAGER_EMAIL}>`,
         to: MANAGER_EMAIL,
@@ -150,13 +148,12 @@ app.delete("/api/suggestions/:id", async (req, res) => {
     }
 });
 
-// --- ניתוב לכל שאר הבקשות (React) ---
-app.get('*', (req, res) => {
+// --- התיקון הקריטי כאן: שימוש ב-Regex במקום כוכבית ---
+app.get(/.*/, (req, res) => {
   const indexPath = path.join(buildPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    // אם הקובץ לא נמצא, נחזיר הודעת שגיאה ברורה לדפדפן
     res.status(404).send(`
       <h1>Error: Build folder not found</h1>
       <p>Server looked in: ${buildPath}</p>
