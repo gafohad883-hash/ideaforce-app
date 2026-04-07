@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import API_BASE_URL from '../config/api';
 import '../styles/NewSuggestionDetails.css';
@@ -8,13 +8,8 @@ function NewSuggestionDetails() {
   const location = useLocation();
   const soldierData = location.state?.soldier;
 
-  // אם מנסים להיכנס ישירות לדף בלי למלא פרטים קודם
-  if (!soldierData) {
-    navigate('/');
-  }
-
   const [formData, setFormData] = useState({
-    classification: '',
+    classification: 'בלמ״ס',
     title: '',
     currentState: '',
     proposal: '',
@@ -27,26 +22,24 @@ function NewSuggestionDetails() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showSecretModal, setShowSecretModal] = useState(false);
+
+  useEffect(() => {
+    if (!soldierData) {
+      navigate('/');
+    }
+  }, [soldierData, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // טיפול בסיווג סודי
-    if (name === 'classification' && value === 'סודי') {
-      setShowSecretModal(true);
-      setFormData({ ...formData, classification: '' });
-      return;
-    }
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async () => {
-    // בדיקות חובה
     if (!formData.title || !formData.currentState || !formData.proposal || !formData.domain || !formData.unit) {
       setError('נא למלא את כל שדות החובה');
       return;
     }
-    // אם בחר "אחר" אבל לא פירט
+
     if (formData.domain === 'אחר' && !formData.otherDomain) {
       setError('נא לפרט את התחום האחר');
       return;
@@ -70,7 +63,6 @@ function NewSuggestionDetails() {
       if (response.ok) {
         navigate('/success');
       } else if (response.status === 409) {
-        // --- כאן תופסים את הכפילות! ---
         setError('שגיאה: קיימת כבר הצעה עם כותרת זהה במערכת. אנא בחר כותרת אחרת.');
       } else {
         const errData = await response.json();
@@ -83,6 +75,10 @@ function NewSuggestionDetails() {
     }
   };
 
+  if (!soldierData) {
+    return null;
+  }
+
   return (
     <div className="details-container">
       <header className="details-header">
@@ -93,32 +89,51 @@ function NewSuggestionDetails() {
       <div className="details-card">
         <div className="form-group">
           <label>סיווג ההצעה</label>
-          <select name="classification" value={formData.classification} onChange={handleChange}>
-            <option value="">בחר סיווג...</option>
-            <option value="בלמ״ס">בלמ״ס</option>
-            <option value="שמור">שמור</option>
-            <option value="סודי">סודי</option>
-          </select>
+          <input type="text" value="בלמ״ס" disabled />
         </div>
 
         <div className="form-group">
           <label>שם ההצעה</label>
-          <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="למשל: ייעול תהליך בוקר בגף" />
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="למשל: ייעול תהליך בוקר בגף"
+          />
         </div>
 
         <div className="form-group">
           <label>תיאור המצב הקיים</label>
-          <textarea name="currentState" rows="3" value={formData.currentState} onChange={handleChange} placeholder="מה קורה היום ומה הבעיה..." />
+          <textarea
+            name="currentState"
+            rows="3"
+            value={formData.currentState}
+            onChange={handleChange}
+            placeholder="מה קורה היום ומה הבעיה..."
+          />
         </div>
 
         <div className="form-group">
           <label>מה ההצעה?</label>
-          <textarea name="proposal" rows="3" value={formData.proposal} onChange={handleChange} placeholder="מה הפתרון שאתה מציע..." />
+          <textarea
+            name="proposal"
+            rows="3"
+            value={formData.proposal}
+            onChange={handleChange}
+            placeholder="מה הפתרון שאתה מציע..."
+          />
         </div>
 
         <div className="form-group">
           <label>מה זה בא לשפר?</label>
-          <textarea name="improvement" rows="2" value={formData.improvement} onChange={handleChange} placeholder="זמן, כסף, בטיחות..." />
+          <textarea
+            name="improvement"
+            rows="2"
+            value={formData.improvement}
+            onChange={handleChange}
+            placeholder="זמן, כסף, בטיחות..."
+          />
         </div>
 
         <div className="row-group">
@@ -134,7 +149,7 @@ function NewSuggestionDetails() {
               <option value="אחר">אחר</option>
             </select>
           </div>
-          
+
           <div className="form-group half">
             <label>יחידה</label>
             <select name="unit" value={formData.unit} onChange={handleChange}>
@@ -153,15 +168,27 @@ function NewSuggestionDetails() {
         </div>
 
         {formData.domain === 'אחר' && (
-            <div className="form-group">
-                <label>פרט את התחום האחר:</label>
-                <input type="text" name="otherDomain" value={formData.otherDomain} onChange={handleChange} placeholder="למשל: רפואה, לוגיסטיקה..." />
-            </div>
+          <div className="form-group">
+            <label>פרט את התחום האחר:</label>
+            <input
+              type="text"
+              name="otherDomain"
+              value={formData.otherDomain}
+              onChange={handleChange}
+              placeholder="למשל: רפואה, לוגיסטיקה..."
+            />
+          </div>
         )}
 
         <div className="form-group">
           <label>גף / מחלקה</label>
-          <input type="text" name="gaf" value={formData.gaf} onChange={handleChange} placeholder="למשל: גף אוהד" />
+          <input
+            type="text"
+            name="gaf"
+            value={formData.gaf}
+            onChange={handleChange}
+            placeholder="למשל: גף אוהד"
+          />
         </div>
 
         {error && <p className="error-text">{error}</p>}
@@ -173,25 +200,6 @@ function NewSuggestionDetails() {
           </button>
         </div>
       </div>
-
-      {showSecretModal && (
-        <div className="secret-overlay">
-          <div className="secret-modal">
-            <h3>הצעה מסווגת – סודי</h3>
-            <p>
-              במידה והצעת הייעול הינה סודית יש לפנות למפקדים להמשך תהליך הגשת
-              ההצעה.
-            </p>
-            <button
-              type="button"
-              className="secret-close-btn"
-              onClick={() => setShowSecretModal(false)}
-            >
-              הבנתי
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
