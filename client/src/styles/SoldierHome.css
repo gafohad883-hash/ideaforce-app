@@ -26,6 +26,10 @@
   padding: 12px 14px;
 }
 
+.home-emblem.icon-only {
+  padding: 10px;
+}
+
 .home-emblem strong {
   display: block;
   font-size: 0.95rem;
@@ -206,14 +210,15 @@
 }
 
 @media (max-width: 900px) {
-  .home-top-bar,
-  .home-main {
-    grid-template-columns: 1fr;
-    flex-direction: column;
+  .home-top-bar {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
   }
 
-  .home-top-bar {
-    display: flex;
+  .home-main {
+    grid-template-columns: 1fr;
   }
 
   .home-hero-card,
@@ -223,5 +228,27 @@
 
   .home-buttons {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-shell {
+    padding: 20px 14px 18px;
+  }
+
+  .home-top-bar {
+    gap: 10px;
+  }
+
+  .home-emblem.icon-only {
+    border-radius: 16px;
+    padding: 8px;
+  }
+
+  .emblem-logo-frame {
+    border-radius: 14px;
+    height: 58px;
+    min-width: 58px;
+    padding: 4px;
   }
 }

@@ -8,22 +8,13 @@ function SoldierHome() {
   return (
     <div className="home-shell">
       <div className="home-top-bar">
-        {/* לוגואים אמיתיים של הבסיס והטייסת שמוצגים ישירות ממחיצת public. */}
-        <div className="home-emblem left">
+        <div className="home-emblem icon-only">
           <div className="emblem-logo-frame">
             <img src="/assets/base-logo.jpeg" alt="סמל הבסיס" className="real-emblem" />
           </div>
-          <div>
-            <strong>סמל הבסיס</strong>
-            <span>מערך ייעול ותהליכים</span>
-          </div>
         </div>
 
-        <div className="home-emblem right">
-          <div>
-            <strong>סמל הטייסת</strong>
-            <span>יחידת הפעלה ושיפור</span>
-          </div>
+        <div className="home-emblem icon-only">
           <div className="emblem-logo-frame">
             <img src="/assets/squadron-logo.jpeg" alt="סמל הטייסת" className="real-emblem" />
           </div>

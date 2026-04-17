@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
@@ -11,6 +11,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('הכל');
+  const [sortBy, setSortBy] = useState('newest');
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
   const [duplicateDecision, setDuplicateDecision] = useState('not_checked');
   const [duplicateNote, setDuplicateNote] = useState('');
@@ -38,17 +39,37 @@ function AdminDashboard() {
       return;
     }
 
-    // בכל פתיחה של הצעה נטען את מצב הכפילות האחרון כדי שהמנהל יוכל להמשיך מאותה נקודה.
+    // בכל פתיחת הצעה טוענים את מצב הכפילות האחרון כדי לאפשר המשך עבודה רציף.
     setDuplicateDecision(selectedSuggestion.duplicateReviewStatus || (selectedSuggestion.isDuplicate ? 'suspected' : 'not_checked'));
     setDuplicateNote(selectedSuggestion.duplicateReviewNote || '');
   }, [selectedSuggestion]);
+
+  const formatDate = (value) => {
+    if (!value) {
+      return '-';
+    }
+
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleString('he-IL');
+    }
+
+    return value;
+  };
+
+  const getLastUpdate = (suggestion) => {
+    if (suggestion.history?.length) {
+      return suggestion.history[suggestion.history.length - 1]?.date || suggestion.updatedAt || suggestion.date;
+    }
+
+    return suggestion.updatedAt || suggestion.date;
+  };
 
   const getRelatedSuggestion = (suggestion) => {
     if (!suggestion?.duplicateOfId) {
       return null;
     }
 
-    // מאתר את ההצעה המקושרת כדי לאפשר מעבר ישיר בין ההצעה הנוכחית להצעה הדומה לה.
     return suggestions.find((item) => item.id === suggestion.duplicateOfId) || null;
   };
 
@@ -60,16 +81,15 @@ function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('האם את בטוחה שברצונך למחוק את ההצעה לצמיתות?')) {
+    if (!window.confirm('האם למחוק את ההצעה לצמיתות?')) {
       return;
     }
 
     try {
       const res = await fetch(`${API_BASE_URL}/suggestions/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setSuggestions((prev) => prev.filter((s) => s.id !== id));
+        setSuggestions((prev) => prev.filter((s) => s.id !== id && s._id !== id));
         setSelectedSuggestion(null);
-        alert('ההצעה נמחקה.');
       }
     } catch (error) {
       console.error(error);
@@ -84,14 +104,17 @@ function AdminDashboard() {
         body: JSON.stringify({ status: newStatus })
       });
 
-      if (res.ok) {
-        setSuggestions((prev) => prev.map((s) => (
-          s.id === id || s._id === id ? { ...s, status: newStatus } : s
-        )));
+      if (!res.ok) {
+        return;
+      }
 
-        if (selectedSuggestion && (selectedSuggestion.id === id || selectedSuggestion._id === id)) {
-          setSelectedSuggestion((prev) => ({ ...prev, status: newStatus }));
-        }
+      const updatedSuggestion = await res.json();
+      setSuggestions((prev) => prev.map((s) => (
+        s.id === updatedSuggestion.id || s._id === updatedSuggestion._id ? updatedSuggestion : s
+      )));
+
+      if (selectedSuggestion && (selectedSuggestion.id === updatedSuggestion.id || selectedSuggestion._id === updatedSuggestion._id)) {
+        setSelectedSuggestion(updatedSuggestion);
       }
     } catch (error) {
       console.error(error);
@@ -113,7 +136,7 @@ function AdminDashboard() {
         return;
       }
 
-      // כאן נשמרת החלטת המנהל על הכפילות, כולל הערה שמסבירה את שיקול הדעת.
+      // כאן נשמרת החלטת המנהל על הכפילות כדי שהמערכת תישאר מוסברת ומתועדת.
       const updatedSuggestion = await res.json();
       setSuggestions((prev) => prev.map((s) => (
         s.id === updatedSuggestion.id || s._id === updatedSuggestion._id ? updatedSuggestion : s
@@ -125,7 +148,6 @@ function AdminDashboard() {
   };
 
   const getDuplicateDecisionLabel = (reviewStatus, isDuplicate) => {
-    // מיפוי פנימי לערכים ברורים בעברית, כדי שהמנהל יראה משמעות ולא קודי מערכת.
     switch (reviewStatus) {
       case 'confirmed_duplicate':
         return 'כפילות מאושרת';
@@ -141,11 +163,124 @@ function AdminDashboard() {
   };
 
   const hasDuplicateState = (suggestion) => (
-    // מציגים מידע על כפילות גם אם המנהל סימן "לא כפילות", כדי שלא יאבד הקשר ההיסטורי.
     suggestion?.isDuplicate || suggestion?.duplicateReviewStatus === 'not_duplicate'
   );
 
-  const generateWordDocument = (s) => {
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'מאושר':
+        return 'green';
+      case 'נדחה':
+        return 'red';
+      case 'בטיפול':
+        return 'blue';
+      default:
+        return 'gray';
+    }
+  };
+
+  const summaryCards = useMemo(() => ([
+    { label: 'סה"כ הצעות', value: suggestions.length, tone: 'neutral' },
+    { label: 'בהמתנה', value: suggestions.filter((s) => s.status === 'בהמתנה').length, tone: 'gray' },
+    { label: 'בטיפול', value: suggestions.filter((s) => s.status === 'בטיפול').length, tone: 'blue' },
+    { label: 'כפילויות', value: suggestions.filter((s) => hasDuplicateState(s)).length, tone: 'gold' }
+  ]), [suggestions]);
+
+  const filteredSuggestions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const filtered = suggestions.filter((suggestion) => {
+      const matchesSearch = !normalizedSearch
+        || suggestion.title?.toLowerCase().includes(normalizedSearch)
+        || suggestion.soldier?.soldierName?.toLowerCase().includes(normalizedSearch)
+        || suggestion.soldier?.fullName?.toLowerCase().includes(normalizedSearch)
+        || suggestion.soldier?.idNumber?.includes(normalizedSearch)
+        || suggestion.unit?.toLowerCase().includes(normalizedSearch);
+
+      const matchesStatus = statusFilter === 'הכל' || suggestion.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    // המיון נותן למנהל שליטה על הסדר ולא משאיר את המסך סטטי.
+    filtered.sort((a, b) => {
+      if (sortBy === 'title') {
+        return (a.title || '').localeCompare(b.title || '', 'he');
+      }
+
+      if (sortBy === 'updated') {
+        return new Date(getLastUpdate(b)).getTime() - new Date(getLastUpdate(a)).getTime();
+      }
+
+      return new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime();
+    });
+
+    return filtered;
+  }, [suggestions, searchTerm, statusFilter, sortBy]);
+
+  const escapeHtml = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const buildExcelRows = (items) => items.map((suggestion) => ({
+    'מספר הצעה': suggestion.id || '',
+    'שם ההצעה': suggestion.title || '',
+    'מגיש': suggestion.soldier?.fullName || suggestion.soldier?.soldierName || '',
+    'תעודת זהות': suggestion.soldier?.idNumber || '',
+    'יחידה': suggestion.unit || '',
+    'תחום': suggestion.domain || suggestion.otherDomain || '',
+    'סטטוס': suggestion.status || '',
+    'כפילות': hasDuplicateState(suggestion) ? getDuplicateDecisionLabel(suggestion.duplicateReviewStatus, suggestion.isDuplicate) : 'לא',
+    'תאריך הגשה': formatDate(suggestion.date || suggestion.createdAt),
+    'עדכון אחרון': formatDate(getLastUpdate(suggestion))
+  }));
+
+  const exportRowsToExcel = (rows, fileName) => {
+    const headers = Object.keys(rows[0] || {});
+    const tableHead = headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('');
+    const tableRows = rows.map((row) => (
+      `<tr>${headers.map((header) => `<td>${escapeHtml(row[header])}</td>`).join('')}</tr>`
+    )).join('');
+
+    const workbookHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:x="urn:schemas-microsoft-com:office:excel"
+            xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: Arial, sans-serif; direction: rtl; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #cfd8e3; padding: 8px; text-align: right; }
+            th { background: #e8eef7; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <thead><tr>${tableHead}</tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', workbookHtml], {
+      type: 'application/vnd.ms-excel;charset=utf-8;'
+    });
+    saveAs(blob, `${fileName}.xls`);
+  };
+
+  const exportSuggestionToExcel = (suggestion) => {
+    exportRowsToExcel(buildExcelRows([suggestion]), `IdeaForce_${suggestion.id}`);
+  };
+
+  const exportFilteredSuggestionsToExcel = () => {
+    exportRowsToExcel(buildExcelRows(filteredSuggestions), 'IdeaForce_Suggestions');
+  };
+
+  const generateWordDocument = (suggestion) => {
     const createHebrewParagraph = (text, options = {}) => (
       new Paragraph({
         children: [new TextRun({ text, size: 24, font: 'Arial', ...options.textOptions })],
@@ -166,148 +301,208 @@ function AdminDashboard() {
             bidirectional: true,
             spacing: { after: 300 }
           }),
-          createHebrewParagraph(`מספר ההצעה: ${s.id}`),
-          createHebrewParagraph(`תאריך ההגשה: ${s.date}`),
-          createHebrewParagraph(`סטטוס נוכחי: ${s.status}`, { spacing: { after: 300 } }),
+          createHebrewParagraph(`מספר ההצעה: ${suggestion.id}`),
+          createHebrewParagraph(`תאריך ההגשה: ${formatDate(suggestion.date || suggestion.createdAt)}`),
+          createHebrewParagraph(`סטטוס נוכחי: ${suggestion.status}`, { spacing: { after: 300 } }),
           createHebrewParagraph('------------------------------------------------', { alignment: AlignmentType.CENTER }),
           createHebrewParagraph('פרטי המגיש:', { heading: HeadingLevel.HEADING_2 }),
-          createHebrewParagraph(`שם: ${s.soldier?.soldierName || ''}`),
-          createHebrewParagraph(`ת"ז: ${s.soldier?.idNumber || ''}`),
-          createHebrewParagraph(`יחידה: ${s.unit || ''} | גף: ${s.gaf || ''}`, { spacing: { after: 300 } }),
+          createHebrewParagraph(`שם: ${suggestion.soldier?.soldierName || suggestion.soldier?.fullName || ''}`),
+          createHebrewParagraph(`ת"ז: ${suggestion.soldier?.idNumber || ''}`),
+          createHebrewParagraph(`יחידה: ${suggestion.unit || ''} | גף: ${suggestion.gaf || ''}`, { spacing: { after: 300 } }),
           createHebrewParagraph('פרטי ההצעה:', { heading: HeadingLevel.HEADING_2 }),
           createHebrewParagraph('נושא:', { textOptions: { bold: true } }),
-          createHebrewParagraph(s.title || '', { spacing: { after: 150 } }),
+          createHebrewParagraph(suggestion.title || '', { spacing: { after: 150 } }),
           createHebrewParagraph('מצב קיים:', { textOptions: { bold: true } }),
-          createHebrewParagraph(s.currentState || '', { spacing: { after: 150 } }),
+          createHebrewParagraph(suggestion.currentState || '', { spacing: { after: 150 } }),
           createHebrewParagraph('ההצעה:', { textOptions: { bold: true } }),
-          createHebrewParagraph(s.proposal || '', { spacing: { after: 150 } }),
-          createHebrewParagraph('תועלת צפויה (שיפור):', { textOptions: { bold: true } }),
-          createHebrewParagraph(s.improvement || '', { spacing: { after: 300 } }),
-          createHebrewParagraph('------------------------------------------------', { alignment: AlignmentType.CENTER }),
-          createHebrewParagraph('חתימת רמ"ד / מפקד יחידה: ___________________', { spacing: { before: 500 } })
+          createHebrewParagraph(suggestion.proposal || '', { spacing: { after: 150 } }),
+          createHebrewParagraph('תועלת צפויה:', { textOptions: { bold: true } }),
+          createHebrewParagraph(suggestion.improvement || '', { spacing: { after: 300 } })
         ]
       }]
     });
 
     Packer.toBlob(doc).then((blob) => {
-      saveAs(blob, `IdeaForce_${s.id}.docx`);
+      saveAs(blob, `IdeaForce_${suggestion.id}.docx`);
     });
   };
 
-  const filteredSuggestions = suggestions.filter((s) => {
-    const matchesSearch = s.title?.includes(searchTerm)
-      || s.soldier?.soldierName?.includes(searchTerm)
-      || s.soldier?.idNumber?.includes(searchTerm);
-    const matchesStatus = statusFilter === 'הכל' || s.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   return (
-    <div className="admin-container">
-      <header className="admin-header">
-        <h1>ממשק ניהול הצעות</h1>
+    <div className="admin-shell">
+      <header className="admin-hero">
+        <div>
+          <span className="admin-kicker">מרחב ניהולי</span>
+          <h1>ניהול הצעות</h1>
+          <p>תמונת מצב מהירה, מעבר נוח בין הצעות, וקבלת החלטות במקום אחד.</p>
+        </div>
+
         <div className="header-actions">
           <button className="stats-btn" onClick={() => navigate('/admin/stats')}>
-            פתיחת נתוני הצעות ייעול
+            מעבר לדשבורד
           </button>
-          <button className="logout-btn" onClick={() => navigate('/')}>יציאה</button>
+          <button className="excel-btn" onClick={exportFilteredSuggestionsToExcel}>
+            ייצוא לאקסל
+          </button>
+          <button className="logout-btn" onClick={() => navigate('/')}>
+            יציאה
+          </button>
         </div>
       </header>
 
-      <div className="admin-content-wrapper">
-        <div className="admin-controls">
-          <input
-            type="text"
-            placeholder="חיפוש חופשי..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="admin-search"
-          />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="admin-filter">
-            <option value="הכל">כל הסטטוסים</option>
-            <option value="בהמתנה">בהמתנה</option>
-            <option value="בטיפול">בטיפול</option>
-            <option value="מאושר">מאושר</option>
-            <option value="נדחה">נדחה</option>
-          </select>
-        </div>
+      <section className="admin-summary-grid">
+        {summaryCards.map((card) => (
+          <article key={card.label} className={`summary-card ${card.tone}`}>
+            <span className="summary-card-label">{card.label}</span>
+            <strong className="summary-card-value">{card.value}</strong>
+          </article>
+        ))}
+      </section>
 
-        <div className="table-container">
-          {loading ? <p>טוען נתונים...</p> : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>תאריך</th>
-                  <th>מגיש</th>
-                  <th>כותרת</th>
-                  <th>יחידה</th>
-                  <th>כפילות</th>
-                  <th>סטטוס</th>
-                  <th>פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSuggestions.map((s) => (
-                  <tr key={s.id || s._id}>
-                    <td>{s.date}</td>
-                    <td>
-                      <div className="soldier-info">
-                        <strong>{s.soldier?.soldierName}</strong>
-                        <span>{s.soldier?.idNumber}</span>
-                      </div>
-                    </td>
-                    <td>{s.title}</td>
-                    <td>{s.unit}</td>
-                    <td>
-                      {hasDuplicateState(s) ? (
-                        <span className="duplicate-badge">
-                          {/* אזהרה ויזואלית שמבליטה למנהל שיש כאן הצעה שדורשת שיקול דעת. */}
-                          <span className="duplicate-icon">⚠</span>
-                          {getDuplicateDecisionLabel(s.duplicateReviewStatus, s.isDuplicate)}
-                        </span>
-                      ) : '-'}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${s.status === 'מאושר' ? 'green' : s.status === 'נדחה' ? 'red' : 'gray'}`}>
-                        {s.status}
-                      </span>
-                    </td>
-                    <td><button className="view-btn" onClick={() => setSelectedSuggestion(s)}>צפה בפרטים</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <section className="admin-filters-card">
+        <input
+          type="text"
+          placeholder="חיפוש לפי כותרת, מגיש, תעודת זהות או יחידה"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="admin-search"
+        />
+
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="admin-filter">
+          <option value="הכל">כל הסטטוסים</option>
+          <option value="בהמתנה">בהמתנה</option>
+          <option value="בטיפול">בטיפול</option>
+          <option value="מאושר">מאושר</option>
+          <option value="נדחה">נדחה</option>
+        </select>
+
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="admin-filter">
+          <option value="newest">מיון: חדשות תחילה</option>
+          <option value="updated">מיון: עדכון אחרון</option>
+          <option value="title">מיון: כותרת א-ב</option>
+        </select>
+
+        <div className="results-pill">
+          מוצגות <strong>{filteredSuggestions.length}</strong> הצעות
         </div>
-      </div>
+      </section>
+
+      <section className="admin-list-shell">
+        {loading ? (
+          <p className="admin-empty">טוען נתונים...</p>
+        ) : filteredSuggestions.length === 0 ? (
+          <p className="admin-empty">לא נמצאו הצעות שתואמות לחיפוש ולסינון שנבחרו.</p>
+        ) : (
+          filteredSuggestions.map((suggestion) => (
+            <article key={suggestion.id || suggestion._id} className="admin-suggestion-card">
+              <div className="card-header-row">
+                <div>
+                  <span className="card-code">#{suggestion.id}</span>
+                  <h3>{suggestion.title}</h3>
+                </div>
+
+                <div className="card-badges">
+                  {hasDuplicateState(suggestion) && (
+                    <span className="duplicate-badge">
+                      <span className="duplicate-icon">⚠</span>
+                      {getDuplicateDecisionLabel(suggestion.duplicateReviewStatus, suggestion.isDuplicate)}
+                    </span>
+                  )}
+
+                  <span className={`status-badge ${getStatusClass(suggestion.status)}`}>
+                    {suggestion.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="admin-card-grid">
+                <div className="admin-meta-box">
+                  <span className="meta-label">מגיש</span>
+                  <span className="meta-value">{suggestion.soldier?.fullName || suggestion.soldier?.soldierName || '-'}</span>
+                </div>
+                <div className="admin-meta-box">
+                  <span className="meta-label">תעודת זהות</span>
+                  <span className="meta-value">{suggestion.soldier?.idNumber || '-'}</span>
+                </div>
+                <div className="admin-meta-box">
+                  <span className="meta-label">יחידה</span>
+                  <span className="meta-value">{suggestion.unit || '-'}</span>
+                </div>
+                <div className="admin-meta-box">
+                  <span className="meta-label">עדכון אחרון</span>
+                  <span className="meta-value">{formatDate(getLastUpdate(suggestion))}</span>
+                </div>
+              </div>
+
+              <div className="admin-card-footer">
+                <button className="card-action primary" onClick={() => setSelectedSuggestion(suggestion)}>
+                  צפייה וניהול
+                </button>
+                <button className="card-action secondary" onClick={() => generateWordDocument(suggestion)}>
+                  Word
+                </button>
+                <button className="card-action secondary" onClick={() => exportSuggestionToExcel(suggestion)}>
+                  Excel
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </section>
 
       {selectedSuggestion && (
         <div className="modal-overlay" onClick={() => setSelectedSuggestion(null)}>
           <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedSuggestion(null)}>X</button>
+            <button className="modal-close" onClick={() => setSelectedSuggestion(null)}>×</button>
+
             <div className="modal-header">
-              <h2>{selectedSuggestion.title}</h2>
-              <span className="modal-id">#{selectedSuggestion.id}</span>
+              <div>
+                <span className="card-code">#{selectedSuggestion.id}</span>
+                <h2>{selectedSuggestion.title}</h2>
+                <p>הוגשה בתאריך {formatDate(selectedSuggestion.date || selectedSuggestion.createdAt)}</p>
+              </div>
+              <span className={`status-badge ${getStatusClass(selectedSuggestion.status)}`}>
+                {selectedSuggestion.status}
+              </span>
             </div>
+
             <div className="modal-grid">
               <div className="modal-section">
-                <h3>פרטי ההצעה</h3>
-                <div className="detail-item"><label>מצב קיים:</label><p>{selectedSuggestion.currentState}</p></div>
-                <div className="detail-item"><label>ההצעה:</label><p>{selectedSuggestion.proposal}</p></div>
-                <div className="detail-item"><label>שיפור צפוי:</label><p>{selectedSuggestion.improvement}</p></div>
+                <div className="detail-card">
+                  <h3>פרטי ההצעה</h3>
+                  <div className="detail-item"><label>מצב קיים</label><p>{selectedSuggestion.currentState || '-'}</p></div>
+                  <div className="detail-item"><label>ההצעה</label><p>{selectedSuggestion.proposal || '-'}</p></div>
+                  <div className="detail-item"><label>שיפור צפוי</label><p>{selectedSuggestion.improvement || '-'}</p></div>
+                </div>
+
+                <div className="detail-card">
+                  <h3>היסטוריית סטטוסים</h3>
+                  {selectedSuggestion.history?.length ? (
+                    selectedSuggestion.history.map((item, index) => (
+                      <div className="history-row" key={`${item.date}-${index}`}>
+                        <strong>{item.status || '-'}</strong>
+                        <span>{formatDate(item.date)}</span>
+                        <p>{item.note || 'ללא הערה'}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="admin-empty compact">אין היסטוריה להצגה.</p>
+                  )}
+                </div>
               </div>
-              <div className="modal-sidebar">
+
+              <aside className="modal-sidebar">
                 <div className="sidebar-box">
                   <h3>פרטי המגיש</h3>
-                  <p><strong>שם:</strong> {selectedSuggestion.soldier?.soldierName}</p>
-                  <p><strong>ת"ז:</strong> {selectedSuggestion.soldier?.idNumber}</p>
-                  <p><strong>טלפון:</strong> {selectedSuggestion.soldier?.phone}</p>
-                  <p><strong>יחידה:</strong> {selectedSuggestion.unit}</p>
+                  <p><strong>שם:</strong> {selectedSuggestion.soldier?.fullName || selectedSuggestion.soldier?.soldierName || '-'}</p>
+                  <p><strong>ת"ז:</strong> {selectedSuggestion.soldier?.idNumber || '-'}</p>
+                  <p><strong>טלפון:</strong> {selectedSuggestion.soldier?.phone || '-'}</p>
+                  <p><strong>יחידה:</strong> {selectedSuggestion.unit || '-'}</p>
+                  <p><strong>גף:</strong> {selectedSuggestion.gaf || '-'}</p>
                 </div>
 
                 {hasDuplicateState(selectedSuggestion) && (
                   <div className="sidebar-box duplicate-box">
-                    <h3>ניהול כפילות</h3>
+                    <h3>ניהול כפילויות</h3>
                     <div className="duplicate-summary-row">
                       <span className="duplicate-badge">
                         <span className="duplicate-icon">⚠</span>
@@ -316,12 +511,13 @@ function AdminDashboard() {
                     </div>
                     <p><strong>דומה להצעה מספר:</strong> {selectedSuggestion.duplicateOfId || '-'}</p>
                     <p><strong>כותרת הצעה דומה:</strong> {selectedSuggestion.duplicateOfTitle || '-'}</p>
-                    {/* כפתור מעבר מהיר להצעה המקושרת, כדי להשוות בלי לחפש ידנית בטבלה. */}
+
                     {getRelatedSuggestion(selectedSuggestion) && (
                       <button className="related-suggestion-btn" onClick={() => openRelatedSuggestion(selectedSuggestion)}>
                         פתח הצעה קשורה
                       </button>
                     )}
+
                     <select
                       value={duplicateDecision}
                       onChange={(e) => setDuplicateDecision(e.target.value)}
@@ -332,13 +528,15 @@ function AdminDashboard() {
                       <option value="improved_version">גרסה משופרת</option>
                       <option value="not_duplicate">לא כפילות</option>
                     </select>
+
                     <textarea
                       className="duplicate-note-input"
                       rows="4"
                       value={duplicateNote}
                       onChange={(e) => setDuplicateNote(e.target.value)}
-                      placeholder="הערת מנהל: למה זו כפילות, שדרוג, או לא כפילות"
+                      placeholder="הערת מנהל לגבי ההחלטה"
                     />
+
                     <button className="duplicate-save-btn" onClick={() => handleDuplicateReviewSave(selectedSuggestion.id || selectedSuggestion._id)}>
                       שמירת החלטת כפילות
                     </button>
@@ -346,7 +544,7 @@ function AdminDashboard() {
                 )}
 
                 <div className="sidebar-box action-box">
-                  <h3>ניהול</h3>
+                  <h3>פעולות ניהול</h3>
                   <select
                     value={selectedSuggestion.status}
                     onChange={(e) => handleStatusChange(selectedSuggestion.id || selectedSuggestion._id, e.target.value)}
@@ -357,10 +555,18 @@ function AdminDashboard() {
                     <option value="מאושר">מאושר</option>
                     <option value="נדחה">נדחה</option>
                   </select>
-                  <button className="word-export-btn" onClick={() => generateWordDocument(selectedSuggestion)}>ייצוא ל-Word</button>
-                  <button className="delete-btn" onClick={() => handleDelete(selectedSuggestion.id || selectedSuggestion._id)}>מחק הצעה</button>
+
+                  <button className="word-export-btn" onClick={() => generateWordDocument(selectedSuggestion)}>
+                    ייצוא ל-Word
+                  </button>
+                  <button className="excel-export-btn" onClick={() => exportSuggestionToExcel(selectedSuggestion)}>
+                    ייצוא ל-Excel
+                  </button>
+                  <button className="delete-btn" onClick={() => handleDelete(selectedSuggestion.id || selectedSuggestion._id)}>
+                    מחק הצעה
+                  </button>
                 </div>
-              </div>
+              </aside>
             </div>
           </div>
         </div>
