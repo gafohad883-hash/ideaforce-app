@@ -1,0 +1,189 @@
+.soldier-details-container {
+  background: linear-gradient(180deg, #10273d 0%, #173c5a 34%, #eef4fb 34.1%, #eef4fb 100%);
+  direction: rtl;
+  min-height: 100vh;
+  padding: 34px 20px 30px;
+}
+
+.soldier-details-header {
+  color: #fff;
+  margin: 0 auto 74px;
+  max-width: 900px;
+  text-align: center;
+}
+
+.details-kicker {
+  color: rgba(255, 214, 107, 0.9);
+  display: inline-block;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.soldier-details-header h2 {
+  font-size: 2rem;
+  margin: 0 0 10px;
+}
+
+.soldier-details-header p {
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 auto;
+  max-width: 660px;
+}
+
+.soldier-details-card {
+  background: #fff;
+  border: 1px solid #dde7f2;
+  border-radius: 28px;
+  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.08);
+  margin: -44px auto 0;
+  max-width: 980px;
+  padding: 28px;
+}
+
+.details-summary-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin-bottom: 26px;
+}
+
+.summary-box {
+  background: #f8fbff;
+  border: 1px solid #dbe7f3;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+}
+
+.accent-status {
+  background: linear-gradient(135deg, #eef6ff, #f8fbff);
+  border-color: #bfd7ff;
+}
+
+.summary-label {
+  color: #52606d;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.summary-value {
+  color: #102a43;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.details-section {
+  margin-top: 26px;
+}
+
+.details-section h3 {
+  color: #102a43;
+  font-size: 1.2rem;
+  margin: 0 0 14px;
+}
+
+.details-row {
+  align-items: flex-start;
+  border-bottom: 1px solid #edf2f7;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 14px 0;
+}
+
+.details-row strong {
+  color: #334e68;
+  min-width: 150px;
+}
+
+.details-row span {
+  color: #102a43;
+  flex: 1;
+}
+
+.details-block {
+  margin-top: 16px;
+}
+
+.details-block strong {
+  color: #334e68;
+}
+
+.details-block p {
+  background: #f8fbff;
+  border: 1px solid #e1ebf5;
+  border-radius: 16px;
+  color: #102a43;
+  line-height: 1.8;
+  margin-top: 8px;
+  padding: 16px;
+  white-space: pre-wrap;
+}
+
+.duplicate-details-note p {
+  background: #fff8e1;
+  border-color: #f0d98b;
+}
+
+.details-history {
+  margin-top: 28px;
+}
+
+.history-item {
+  background: #f8fbff;
+  border: 1px solid #dbe7f3;
+  border-right: 4px solid #0b5fff;
+  border-radius: 18px;
+  margin-bottom: 14px;
+  padding: 16px;
+}
+
+.history-item-row {
+  color: #334e68;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.history-item-row span {
+  color: #102a43;
+}
+
+.note-row {
+  margin-bottom: 0;
+}
+
+.empty-history {
+  color: #7b8794;
+}
+
+.details-actions {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.details-actions button {
+  background: #0b5fff;
+  border: none;
+  border-radius: 16px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 52px;
+  padding: 0 26px;
+}
+
+@media (max-width: 768px) {
+  .details-row {
+    flex-direction: column;
+  }
+
+  .soldier-details-card {
+    padding: 22px;
+  }
+}

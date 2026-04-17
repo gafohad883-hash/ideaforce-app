@@ -41,6 +41,19 @@
   line-height: 1.5;
 }
 
+.success-duplicate-note {
+  background: #fff8e1;
+  border: 1px solid #f0d98b;
+  border-radius: 14px;
+  color: #6c5400;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  text-align: right;
+}
+
 .success-buttons {
   display: flex;
   flex-direction: column;

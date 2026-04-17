@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom'; // הוספנו useNavigate
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import './styles/App.css';
 
 import SoldierHome from './pages/SoldierHome';
@@ -7,18 +7,18 @@ import NewSuggestion from './pages/NewSuggestion';
 import NewSuggestionDetails from './pages/NewSuggestionDetails';
 import SuggestionSuccess from './pages/SuggestionSuccess';
 import SoldierSuggestions from './pages/SoldierSuggestions';
+import SoldierSuggestionDetails from './pages/SoldierSuggestionDetails';
 import AdminDashboard from './admin/AdminDashboard';
 import AdminStats from './admin/AdminStats';
-import AdminLogin from './admin/AdminLogin'; // הייבוא החדש
+import AdminLogin from './admin/AdminLogin';
 
-// רכיב שבודק אם מותר להיכנס ("שומר בשער")
 const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
   useEffect(() => {
     if (!isAdmin) {
-      navigate('/admin'); // אם לא מנהל - זורק אותו למסך הלוגין
+      navigate('/admin');
     }
   }, [isAdmin, navigate]);
 
@@ -34,22 +34,27 @@ function App() {
         <Route path="/new-suggestion-details" element={<NewSuggestionDetails />} />
         <Route path="/success" element={<SuggestionSuccess />} />
         <Route path="/my-suggestions" element={<SoldierSuggestions />} />
+        <Route path="/my-suggestions/details" element={<SoldierSuggestionDetails />} />
 
-        {/* מסך הלוגין הוא עכשיו הכניסה לניהול */}
         <Route path="/admin" element={<AdminLogin />} />
 
-        {/* הנתיבים המוגנים - דורשים סיסמה */}
-        <Route path="/admin/dashboard" element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/admin/stats" element={
-          <ProtectedRoute>
-            <AdminStats />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/stats"
+          element={
+            <ProtectedRoute>
+              <AdminStats />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
   );

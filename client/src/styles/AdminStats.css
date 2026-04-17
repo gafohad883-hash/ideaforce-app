@@ -1,100 +1,354 @@
 .stats-page {
-    min-height: 100vh;
-    background-color: #f0f2f5;
-    direction: rtl;
-    padding-bottom: 50px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 24%),
+    linear-gradient(180deg, #eef4fb 0%, #f7fafc 100%);
+  direction: rtl;
+  padding-bottom: 48px;
 }
 
 .stats-header {
-    background: linear-gradient(135deg, #0b1f33 0%, #1f2f3f 100%);
-    color: white;
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  align-items: flex-start;
+  background: linear-gradient(135deg, #0b1f33 0%, #123b63 58%, #1e5a86 100%);
+  box-shadow: 0 14px 34px rgba(11, 31, 51, 0.18);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 40px;
+}
+
+.stats-eyebrow {
+  color: rgba(255, 255, 255, 0.72);
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
 }
 
 .stats-header h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    letter-spacing: 1px;
+  font-size: 2rem;
+  margin: 0 0 8px;
+}
+
+.stats-header p {
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+  max-width: 620px;
 }
 
 .back-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.4);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 50px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 12px 22px;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .back-btn:hover {
-    background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
-/* כרטיסי סיכום (KPI) */
-.kpi-container {
-    display: flex;
-    gap: 20px;
-    padding: 30px 40px;
-    justify-content: space-between;
+.dashboard-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 22px 40px 0;
+}
+
+.time-filter-group {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.time-filter-label {
+  color: #334e68;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.time-filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.time-filter-btn {
+  background: #fff;
+  border: 1px solid #d7e3f4;
+  border-radius: 999px;
+  color: #334e68;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 10px 16px;
+  transition: all 0.2s ease;
+}
+
+.time-filter-btn:hover {
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.time-filter-btn.active {
+  background: #0b5fff;
+  border-color: #0b5fff;
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(11, 95, 255, 0.22);
+}
+
+.time-filter-summary {
+  color: #52606d;
+  font-size: 0.95rem;
+}
+
+.kpi-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 28px 40px 18px;
 }
 
 .kpi-card {
-    background: white;
-    flex: 1;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    text-align: center;
-    border-top: 5px solid #ddd;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 140px;
+  overflow: hidden;
+  padding: 22px;
+  position: relative;
 }
 
-.kpi-card.blue { border-top-color: #0088FE; }
-.kpi-card.green { border-top-color: #00C49F; }
-.kpi-card.orange { border-top-color: #FFBB28; }
-.kpi-card.purple { border-top-color: #AF19FF; }
-
-.kpi-card h3 {
-    margin: 0;
-    color: #666;
-    font-size: 1rem;
-    font-weight: normal;
+.kpi-card::before {
+  content: '';
+  height: 6px;
+  right: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
 }
 
-.kpi-number {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #333;
-    margin-top: 10px;
+.kpi-card.blue::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.kpi-card.amber::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.kpi-card.indigo::before { background: linear-gradient(90deg, #4338ca, #6366f1); }
+.kpi-card.green::before { background: linear-gradient(90deg, #059669, #34d399); }
+.kpi-card.red::before { background: linear-gradient(90deg, #dc2626, #f87171); }
+.kpi-card.gold::before { background: linear-gradient(90deg, #b45309, #fbbf24); }
+
+.kpi-label {
+  color: #52606d;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
-/* רשת הגרפים */
-.charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* חצי חצי */
-    gap: 30px;
-    padding: 0 40px;
+.kpi-value {
+  color: #102a43;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
-.chart-large-card {
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    height: 450px; /* גובה קבוע ומרשים */
+.kpi-subtitle {
+  color: #7b8794;
+  font-size: 0.9rem;
 }
 
-.chart-large-card h3 {
-    margin-top: 0;
-    text-align: center;
-    color: #0b1f33;
-    font-size: 1.4rem;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
+.insight-strip {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0 40px 20px;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #dde7f2;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+}
+
+.insight-label {
+  color: #52606d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.insight-card strong {
+  color: #0f172a;
+  font-size: 1.15rem;
+}
+
+.insight-card span:last-child {
+  color: #7b8794;
+  font-size: 0.92rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 40px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  padding: 22px 22px 18px;
+}
+
+.panel.wide {
+  grid-column: span 2;
+}
+
+.panel-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel-header h3 {
+  color: #102a43;
+  font-size: 1.2rem;
+  margin: 0 0 4px;
+}
+
+.panel-header p {
+  color: #7b8794;
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.chart-area {
+  height: 320px;
+}
+
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list-row,
+.suggestion-row {
+  align-items: center;
+  background: #f8fbff;
+  border: 1px solid #e5edf6;
+  border-radius: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.list-rank {
+  align-items: center;
+  background: linear-gradient(135deg, #123b63, #2563eb);
+  border-radius: 999px;
+  color: #fff;
+  display: flex;
+  font-weight: 800;
+  height: 34px;
+  justify-content: center;
+  min-width: 34px;
+}
+
+.list-main,
+.suggestion-main,
+.suggestion-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.list-main strong,
+.suggestion-main strong {
+  color: #102a43;
+}
+
+.list-main span,
+.suggestion-main span,
+.suggestion-side small {
+  color: #6b7c93;
+  font-size: 0.9rem;
+}
+
+.suggestion-side {
+  align-items: flex-end;
+}
+
+.status-pill {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.status-pill.בהמתנה { background: #fef3c7; color: #92400e; }
+.status-pill.בטיפול { background: #dbeafe; color: #1d4ed8; }
+.status-pill.מאושר { background: #d1fae5; color: #065f46; }
+.status-pill.נדחה { background: #fee2e2; color: #991b1b; }
+
+.empty-state {
+  color: #7b8794;
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+@media (max-width: 1280px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .insight-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .stats-header {
+    flex-direction: column;
+    padding: 24px 20px;
+  }
+
+  .dashboard-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .kpi-grid,
+  .dashboard-grid,
+  .insight-strip {
+    grid-template-columns: 1fr;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .panel.wide {
+    grid-column: span 1;
+  }
 }

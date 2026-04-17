@@ -9,7 +9,7 @@ function NewSuggestionDetails() {
   const soldierData = location.state?.soldier;
 
   const [formData, setFormData] = useState({
-    classification: 'בלמ״ס',
+    classification: 'בלמ"ס',
     title: '',
     currentState: '',
     proposal: '',
@@ -57,17 +57,25 @@ function NewSuggestionDetails() {
       const response = await fetch(`${API_BASE_URL}/suggestions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        navigate('/success');
-      } else if (response.status === 409) {
-        setError('שגיאה: קיימת כבר הצעה עם כותרת זהה במערכת. אנא בחר כותרת אחרת.');
-      } else {
-        const errData = await response.json();
-        setError('שגיאה בשמירה: ' + (errData.error || 'נסה שנית'));
+        const data = await response.json();
+        const duplicateInfo = data.duplicateInfo || {};
+
+        navigate('/success', {
+          state: {
+            isDuplicate: Boolean(data.isDuplicate || duplicateInfo.isDuplicate),
+            duplicateOfId: data.duplicateOfId || duplicateInfo.duplicateOfId || '',
+            duplicateOfTitle: data.duplicateOfTitle || duplicateInfo.duplicateOfTitle || ''
+          }
+        });
+        return;
       }
+
+      const errData = await response.json();
+      setError('שגיאה בשמירה: ' + (errData.error || 'נסה שנית'));
     } catch (err) {
       setError('שגיאת תקשורת מול השרת.');
     } finally {
@@ -89,7 +97,7 @@ function NewSuggestionDetails() {
       <div className="details-card">
         <div className="form-group">
           <label>סיווג ההצעה</label>
-          <input type="text" value="בלמ״ס" disabled />
+          <input type="text" value='בלמ"ס' disabled />
         </div>
 
         <div className="form-group">
@@ -196,7 +204,7 @@ function NewSuggestionDetails() {
         <div className="details-buttons">
           <button className="back-btn" onClick={() => navigate(-1)}>חזרה</button>
           <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'שולח...' : 'שליחת הצעה'}
+            {loading ? 'שולח...' : 'שליחת ההצעה'}
           </button>
         </div>
       </div>

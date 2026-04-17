@@ -1,101 +1,250 @@
-/* src/styles/SoldierSuggestions.css */
-.mysug-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.mysug-shell {
+  background: linear-gradient(180deg, #10273d 0%, #153955 34%, #eef4fb 34.1%, #eef4fb 100%);
+  direction: rtl;
+  min-height: 100vh;
+  padding-bottom: 30px;
 }
 
 .mysug-header {
-  padding: 20px;
+  color: #fff;
+  padding: 34px 24px 82px;
   text-align: center;
-  color: white;
+}
+
+.mysug-kicker {
+  color: rgba(255, 214, 107, 0.9);
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.mysug-header h2 {
+  font-size: 2.1rem;
+  margin: 0 0 10px;
+}
+
+.mysug-header p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 auto;
+  max-width: 620px;
 }
 
 .mysug-content {
-  flex: 1;
-  background: #f4f5f7;
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: -48px auto 0;
+  max-width: 1080px;
+  padding: 0 20px;
+}
+
+.lookup-card,
+.filters-card,
+.suggestion-card-mini {
+  background: #fff;
+  border: 1px solid #dde7f2;
+  border-radius: 24px;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+}
+
+.lookup-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.lookup-card-text h3 {
+  color: #102a43;
+  margin: 0 0 8px;
+}
+
+.lookup-card-text p {
+  color: #6b7c93;
+  margin: 0;
+  max-width: 560px;
+}
+
+.search-box-row {
+  display: flex;
+  gap: 12px;
+  min-width: min(100%, 380px);
+}
+
+.search-box-row input,
+.search-box-row button,
+.filters-grid input,
+.filters-grid select {
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.96rem;
+  min-height: 48px;
+}
+
+.search-box-row input,
+.filters-grid input,
+.filters-grid select {
+  border: 1px solid #cfdae6;
+  padding: 0 14px;
+}
+
+.search-box-row button {
+  background: #0b5fff;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  min-width: 130px;
+}
+
+.filters-card {
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
 }
 
-/* תיבת חיפוש */
-.search-box input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 50px;
-  border: 1px solid #ddd;
-  text-align: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+.filters-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-/* רשימת כרטיסים */
+.results-summary {
+  color: #52606d;
+  margin-top: 12px;
+}
+
 .suggestions-list {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  padding-bottom: 20px;
+  gap: 16px;
 }
 
 .suggestion-card-mini {
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border-right: 4px solid transparent;
+  cursor: pointer;
+  padding: 22px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.suggestion-card-mini:hover {
+  box-shadow: 0 20px 38px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
 }
 
 .card-top {
+  align-items: flex-start;
   display: flex;
+  gap: 16px;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
-  color: #888;
+  margin-bottom: 16px;
 }
 
-.suggestion-card-mini h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.1rem;
-  color: #333;
+.card-top-main h3 {
+  color: #102a43;
+  font-size: 1.2rem;
+  margin: 8px 0 0;
 }
 
-.card-info {
+.card-id {
+  color: #486581;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.card-tags {
+  align-items: center;
   display: flex;
-  gap: 15px;
-  font-size: 0.85rem;
-  color: #666;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-/* צבעי סטטוס */
-.card-status {
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.8rem;
+.card-status,
+.duplicate-badge {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 11px;
 }
-.status-gray { background: #eee; color: #555; border-right: 4px solid #aaa; }
-.status-blue { background: #e3f2fd; color: #1976d2; border-right: 4px solid #1976d2; }
-.status-green { background: #d4edda; color: #155724; border-right: 4px solid #155724; }
-.status-red { background: #f8d7da; color: #721c24; border-right: 4px solid #721c24; }
+
+.status-gray { background: #eef2f6; color: #52606d; }
+.status-blue { background: #dbeafe; color: #1d4ed8; }
+.status-green { background: #d1fae5; color: #047857; }
+.status-red { background: #fee2e2; color: #b91c1c; }
+
+.duplicate-badge {
+  background: #fff3cd;
+  border: 1px solid #f0d98b;
+  color: #7a5d00;
+}
+
+.card-meta-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.meta-item {
+  background: #f8fbff;
+  border: 1px solid #e5edf6;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.meta-label {
+  color: #6b7c93;
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.meta-value {
+  color: #102a43;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.card-footer {
+  border-top: 1px solid #edf2f7;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.card-footer-text {
+  color: #6b7c93;
+  font-size: 0.9rem;
+}
 
 .back-home-btn {
-  background: #0052a3;
-  color: white;
-  padding: 15px;
-  border-radius: 50px;
+  align-self: center;
+  background: #0b5fff;
   border: none;
-  font-weight: bold;
+  border-radius: 16px;
+  color: #fff;
   cursor: pointer;
-  margin-top: 10px;
+  font-weight: 800;
+  min-height: 52px;
+  padding: 0 28px;
 }
 
-.no-data, .loading-text {
+.no-data,
+.loading-text {
+  color: #7b8794;
+  padding: 30px 0;
   text-align: center;
-  color: #888;
-  margin-top: 30px;
+}
+
+@media (max-width: 900px) {
+  .search-box-row,
+  .filters-grid,
+  .card-meta-grid {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .card-top {
+    flex-direction: column;
+  }
 }

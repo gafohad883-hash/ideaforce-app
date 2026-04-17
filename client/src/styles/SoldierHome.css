@@ -1,93 +1,227 @@
-/* src/styles/SoldierHome.css */
-.home-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.home-header {
-  padding: 20px;
-  text-align: center;
+.home-shell {
+  background:
+    radial-gradient(circle at top left, rgba(255, 196, 0, 0.14), transparent 22%),
+    radial-gradient(circle at top right, rgba(0, 122, 204, 0.16), transparent 26%),
+    linear-gradient(145deg, #071624 0%, #0c2740 46%, #13395d 100%);
   color: #fff;
+  direction: rtl;
+  min-height: 100vh;
+  padding: 26px 24px 20px;
 }
 
-.home-header h1 {
-  margin: 0;
-  font-size: 2rem;
-  letter-spacing: 1px;
+.home-top-bar {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.home-emblem {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.home-emblem strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.home-emblem span:not(.emblem-mark) {
+  color: rgba(255, 255, 255, 0.72);
+  display: block;
+  font-size: 0.8rem;
+}
+
+.emblem-logo-frame {
+  align-items: center;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  display: flex;
+  height: 72px;
+  justify-content: center;
+  min-width: 72px;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.real-emblem {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  mix-blend-mode: multiply;
+  object-fit: contain;
+}
+
+.home-hero {
+  margin: 34px auto 0;
+  max-width: 920px;
+  text-align: center;
+}
+
+.home-kicker {
+  color: #ffd466;
+  display: inline-block;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.home-hero h1 {
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
 }
 
 .home-subtitle {
-  margin: 5px 0 0;
-  opacity: 0.9;
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 1.08rem;
+  line-height: 1.8;
+  margin: 0 auto;
+  max-width: 760px;
 }
 
 .home-main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(290px, 0.9fr);
+  margin: 42px auto 0;
+  max-width: 1140px;
 }
 
-.home-card {
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+.home-hero-card,
+.side-panel-card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 28px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+}
+
+.home-hero-card {
+  padding: 34px;
+}
+
+.hero-card-badge {
+  background: rgba(255, 212, 102, 0.14);
+  border: 1px solid rgba(255, 212, 102, 0.35);
+  border-radius: 999px;
+  color: #ffd466;
+  display: inline-block;
+  font-size: 0.84rem;
+  font-weight: 800;
+  margin-bottom: 18px;
+  padding: 8px 14px;
 }
 
 .home-title {
-  color: #0b1f33;
-  margin-top: 0;
+  font-size: 2rem;
+  margin: 0 0 14px;
 }
 
 .home-text {
-  color: #555;
-  margin-bottom: 30px;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.9;
+  margin-bottom: 28px;
 }
 
 .home-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.home-primary-btn,
+.home-secondary-btn {
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 800;
+  min-height: 54px;
+  padding: 14px 22px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .home-primary-btn {
-  background-color: #0052a3; /* כחול צבאי */
-  color: white;
+  background: linear-gradient(135deg, #d1a62b, #f4c84a);
   border: none;
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 50px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s;
+  box-shadow: 0 14px 26px rgba(244, 200, 74, 0.25);
+  color: #12263a;
 }
 
 .home-secondary-btn {
-  background-color: white;
-  color: #0052a3;
-  border: 2px solid #0052a3;
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 50px;
-  font-weight: bold;
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
 }
 
-.home-primary-btn:active, .home-secondary-btn:active {
-  transform: scale(0.98);
+.home-primary-btn:hover,
+.home-secondary-btn:hover {
+  transform: translateY(-2px);
+}
+
+.home-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.side-panel-card {
+  padding: 24px;
+}
+
+.side-panel-title {
+  color: #ffd466;
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.side-panel-list {
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.8;
+  margin: 0;
+  padding-right: 18px;
+}
+
+.highlight p {
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.8;
+  margin: 0;
 }
 
 .home-footer {
+  color: rgba(255, 255, 255, 0.62);
+  margin-top: 28px;
   text-align: center;
-  padding: 15px;
-  color: rgba(255,255,255,0.6);
-  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .home-top-bar,
+  .home-main {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .home-top-bar {
+    display: flex;
+  }
+
+  .home-hero-card,
+  .side-panel-card {
+    padding: 24px;
+  }
+
+  .home-buttons {
+    flex-direction: column;
+  }
 }
