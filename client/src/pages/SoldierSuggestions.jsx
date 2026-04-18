@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config/api';
 import '../styles/SoldierSuggestions.css';
 
 function SoldierSuggestions() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [inputId, setInputId] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -13,6 +14,24 @@ function SoldierSuggestions() {
   const [statusFilter, setStatusFilter] = useState('הכל');
   const [domainFilter, setDomainFilter] = useState('הכל');
   const [sortBy, setSortBy] = useState('updated_desc');
+
+  useEffect(() => {
+    const restoreState = location.state?.restoreState;
+
+    if (!restoreState) {
+      return;
+    }
+
+    // שומרים את מצב המסך כדי שחזרה מפרטי הצעה לא תאלץ את החייל להקליד שוב תעודת זהות.
+    setInputId(restoreState.inputId || '');
+    setSuggestions(restoreState.suggestions || []);
+    setHasSearched(Boolean(restoreState.hasSearched));
+    setTitleSearch(restoreState.titleSearch || '');
+    setStatusFilter(restoreState.statusFilter || 'הכל');
+    setDomainFilter(restoreState.domainFilter || 'הכל');
+    setSortBy(restoreState.sortBy || 'updated_desc');
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const handleSearch = async () => {
     if (inputId.length !== 9) {
@@ -118,7 +137,20 @@ function SoldierSuggestions() {
   }, [suggestions, titleSearch, statusFilter, domainFilter, sortBy]);
 
   const openSuggestionDetails = (item) => {
-    navigate('/my-suggestions/details', { state: { suggestion: item } });
+    navigate('/my-suggestions/details', {
+      state: {
+        suggestion: item,
+        returnState: {
+          inputId,
+          suggestions,
+          hasSearched,
+          titleSearch,
+          statusFilter,
+          domainFilter,
+          sortBy
+        }
+      }
+    });
   };
 
   return (

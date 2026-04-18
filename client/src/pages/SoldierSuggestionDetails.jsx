@@ -6,6 +6,7 @@ function SoldierSuggestionDetails() {
   const location = useLocation();
   const navigate = useNavigate();
   const suggestion = location.state?.suggestion;
+  const returnState = location.state?.returnState;
 
   if (!suggestion) {
     navigate('/my-suggestions');
@@ -43,6 +44,14 @@ function SoldierSuggestionDetails() {
       default:
         return isDuplicate ? 'חשודה לכפילות' : '-';
     }
+  };
+
+  const goBackToSuggestions = () => {
+    navigate('/my-suggestions', {
+      state: {
+        restoreState: returnState
+      }
+    });
   };
 
   return (
@@ -164,7 +173,7 @@ function SoldierSuggestionDetails() {
         </section>
 
         <div className="details-actions">
-          <button onClick={() => navigate('/my-suggestions')}>חזרה לרשימת ההצעות</button>
+          <button onClick={goBackToSuggestions}>חזרה לרשימת ההצעות</button>
         </div>
       </div>
     </div>

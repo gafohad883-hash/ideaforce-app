@@ -234,6 +234,31 @@ ${note ? `הערת מנהל: ${note}` : ''}
   };
 }
 
+function buildManagerContactEmail({ fullName, squadron, notes }) {
+  return {
+    from: createMailFrom(),
+    to: MANAGER_EMAIL,
+    subject: `פנייה חדשה למנהלת המערכת מאת ${fullName || 'חייל'}`,
+    text: `התקבלה פנייה חדשה מתוך מסך הפתיחה.
+
+שם החייל: ${fullName || '-'}
+טייסת: ${squadron || '-'}
+הערות: ${notes || '-'}`,
+    html: `
+      <div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8;color:#102a43">
+        <h2 style="margin-bottom:8px;">התקבלה פנייה חדשה למנהלת המערכת</h2>
+        <table style="border-collapse:collapse;width:100%;max-width:640px;">
+          <tbody>
+            <tr><td><strong>שם החייל</strong></td><td>${fullName || '-'}</td></tr>
+            <tr><td><strong>טייסת</strong></td><td>${squadron || '-'}</td></tr>
+            <tr><td><strong>הערות</strong></td><td>${notes || '-'}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `
+  };
+}
+
 function performKeepAlivePing(targetUrl) {
   try {
     const parsedUrl = new URL(targetUrl);
@@ -291,6 +316,11 @@ const suggestionSchema = new mongoose.Schema({
   duplicateReason: String,
   duplicateScore: Number,
   duplicateCheckedAt: String,
+  displayInCommittee: {
+    type: Boolean,
+    default: false
+  },
+  committeeDate: String,
   classification: String,
   title: String,
   currentState: String,
@@ -332,6 +362,25 @@ app.get('/api/suggestions', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch' });
+  }
+});
+
+app.post('/api/contact-manager', async (req, res) => {
+  try {
+    const { fullName, squadron, notes } = req.body;
+
+    if (!fullName || !squadron || !notes) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (MANAGER_EMAIL) {
+      await sendEmail(buildManagerContactEmail({ fullName, squadron, notes }));
+    }
+
+    res.status(201).json({ message: 'Message sent' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to send contact message' });
   }
 });
 
@@ -410,6 +459,7 @@ app.post('/api/suggestions', async (req, res) => {
       duplicateReason,
       duplicateScore,
       duplicateCheckedAt: new Date().toISOString(),
+      displayInCommittee: false,
       status: 'בהמתנה',
       history: [
         {
@@ -474,6 +524,34 @@ app.patch('/api/suggestions/:id/status', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Update failed' });
+  }
+});
+
+app.patch('/api/suggestions/:id/committee', async (req, res) => {
+  try {
+    const { displayInCommittee, committeeDate } = req.body;
+    const suggestion = await Suggestion.findOne({ id: req.params.id });
+
+    if (!suggestion) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    // מאפשר למנהל להחליט אם ההצעה תעלה לוועדת ייעול בלי לערבב זאת עם סטטוס הטיפול.
+    suggestion.displayInCommittee = Boolean(displayInCommittee);
+    suggestion.committeeDate = suggestion.displayInCommittee ? (committeeDate || '') : '';
+    suggestion.history.push({
+      date: new Date().toISOString(),
+      status: suggestion.status,
+      note: suggestion.displayInCommittee
+        ? `סומן להצגה בוועדת ייעול${suggestion.committeeDate ? ` בתאריך ${suggestion.committeeDate}` : ''}`
+        : 'הוסר מהצגה בוועדת ייעול'
+    });
+
+    await suggestion.save();
+    res.json(suggestion);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Committee update failed' });
   }
 });
 

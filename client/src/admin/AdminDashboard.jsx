@@ -15,6 +15,8 @@ function AdminDashboard() {
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
   const [duplicateDecision, setDuplicateDecision] = useState('not_checked');
   const [duplicateNote, setDuplicateNote] = useState('');
+  const [committeeDecision, setCommitteeDecision] = useState(false);
+  const [committeeDate, setCommitteeDate] = useState('');
 
   const fetchSuggestions = async () => {
     try {
@@ -42,6 +44,8 @@ function AdminDashboard() {
     // בכל פתיחת הצעה טוענים את מצב הכפילות האחרון כדי לאפשר המשך עבודה רציף.
     setDuplicateDecision(selectedSuggestion.duplicateReviewStatus || (selectedSuggestion.isDuplicate ? 'suspected' : 'not_checked'));
     setDuplicateNote(selectedSuggestion.duplicateReviewNote || '');
+    setCommitteeDecision(Boolean(selectedSuggestion.displayInCommittee));
+    setCommitteeDate(selectedSuggestion.committeeDate || '');
   }, [selectedSuggestion]);
 
   const formatDate = (value) => {
@@ -147,6 +151,32 @@ function AdminDashboard() {
     }
   };
 
+  const handleCommitteeSave = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/suggestions/${id}/committee`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayInCommittee: committeeDecision,
+          committeeDate: committeeDecision ? committeeDate : ''
+        })
+      });
+
+      if (!res.ok) {
+        return;
+      }
+
+      // החלטת ועדת הייעול נשמרת בנפרד כדי שהמנהל יוכל לנהל הצגה לוועדה בלי לשנות סטטוס טיפול.
+      const updatedSuggestion = await res.json();
+      setSuggestions((prev) => prev.map((s) => (
+        s.id === updatedSuggestion.id || s._id === updatedSuggestion._id ? updatedSuggestion : s
+      )));
+      setSelectedSuggestion(updatedSuggestion);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const getDuplicateDecisionLabel = (reviewStatus, isDuplicate) => {
     switch (reviewStatus) {
       case 'confirmed_duplicate':
@@ -233,6 +263,7 @@ function AdminDashboard() {
     'תחום': suggestion.domain || suggestion.otherDomain || '',
     'סטטוס': suggestion.status || '',
     'כפילות': hasDuplicateState(suggestion) ? getDuplicateDecisionLabel(suggestion.duplicateReviewStatus, suggestion.isDuplicate) : 'לא',
+    'תאריך ועדה': suggestion.committeeDate || '',
     'תאריך הגשה': formatDate(suggestion.date || suggestion.createdAt),
     'עדכון אחרון': formatDate(getLastUpdate(suggestion))
   }));
@@ -431,6 +462,14 @@ function AdminDashboard() {
                   <span className="meta-label">עדכון אחרון</span>
                   <span className="meta-value">{formatDate(getLastUpdate(suggestion))}</span>
                 </div>
+                <div className="admin-meta-box">
+                  <span className="meta-label">ועדת ייעול</span>
+                  <span className="meta-value">{suggestion.displayInCommittee ? 'תוצג בוועדה' : 'לא תוצג בוועדה'}</span>
+                </div>
+                <div className="admin-meta-box">
+                  <span className="meta-label">תאריך ועדה</span>
+                  <span className="meta-value">{suggestion.committeeDate || '-'}</span>
+                </div>
               </div>
 
               <div className="admin-card-footer">
@@ -555,6 +594,47 @@ function AdminDashboard() {
                     <option value="מאושר">מאושר</option>
                     <option value="נדחה">נדחה</option>
                   </select>
+
+                  <div className="committee-box">
+                    <span className="committee-label">הצגה בוועדת הצעת ייעול</span>
+                    <div className="committee-actions">
+                      <button
+                        type="button"
+                        className={`committee-toggle ${committeeDecision ? 'active' : ''}`}
+                        onClick={() => setCommitteeDecision(true)}
+                      >
+                        תוצג בוועדה
+                      </button>
+                      <button
+                        type="button"
+                        className={`committee-toggle ${!committeeDecision ? 'active off' : ''}`}
+                        onClick={() => setCommitteeDecision(false)}
+                      >
+                        לא תוצג
+                      </button>
+                    </div>
+                    {committeeDecision && (
+                      <>
+                        {/* תאריך הוועדה נשמר על ההצעה כדי לאפשר אחר כך סינון נוח לפי ועדה קרובה או תאריך מסוים. */}
+                        <label className="committee-date-label">
+                          תאריך ועדה
+                          <input
+                            type="date"
+                            className="committee-date-input"
+                            value={committeeDate}
+                            onChange={(e) => setCommitteeDate(e.target.value)}
+                          />
+                        </label>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      className="committee-save-btn"
+                      onClick={() => handleCommitteeSave(selectedSuggestion.id || selectedSuggestion._id)}
+                    >
+                      שמירת החלטת ועדה
+                    </button>
+                  </div>
 
                   <button className="word-export-btn" onClick={() => generateWordDocument(selectedSuggestion)}>
                     ייצוא ל-Word

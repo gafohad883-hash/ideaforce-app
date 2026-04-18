@@ -1,9 +1,62 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config/api';
 import '../styles/SoldierHome.css';
 
 function SoldierHome() {
   const navigate = useNavigate();
+  const [showBlamasModal, setShowBlamasModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    fullName: '',
+    squadron: '',
+    notes: ''
+  });
+  const [sendingContact, setSendingContact] = useState(false);
+
+  const handleOpenNewSuggestion = () => {
+    setShowBlamasModal(true);
+  };
+
+  const handleContinueToSuggestion = () => {
+    setShowBlamasModal(false);
+    navigate('/new-suggestion');
+  };
+
+  const handleContactChange = (field, value) => {
+    setContactForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmitContact = async (event) => {
+    event.preventDefault();
+
+    if (!contactForm.fullName.trim() || !contactForm.squadron.trim() || !contactForm.notes.trim()) {
+      alert('נא למלא שם חייל, טייסת והערות.');
+      return;
+    }
+
+    setSendingContact(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact-manager`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactForm)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send');
+      }
+
+      alert('הפנייה נשלחה למנהלת המערכת.');
+      setContactForm({ fullName: '', squadron: '', notes: '' });
+      setShowContactModal(false);
+    } catch (error) {
+      console.error(error);
+      alert('לא הצלחנו לשלוח את הפנייה כרגע. נסה שוב בעוד רגע.');
+    } finally {
+      setSendingContact(false);
+    }
+  };
 
   return (
     <div className="home-shell">
@@ -40,7 +93,7 @@ function SoldierHome() {
           </p>
 
           <div className="home-buttons">
-            <button className="home-primary-btn" onClick={() => navigate('/new-suggestion')}>
+            <button className="home-primary-btn" onClick={handleOpenNewSuggestion}>
               שליחת הצעת ייעול חדשה
             </button>
 
@@ -70,8 +123,78 @@ function SoldierHome() {
       </main>
 
       <footer className="home-footer">
+        <button className="contact-manager-btn" onClick={() => setShowContactModal(true)}>
+          יצירת קשר עם מנהל המערכת
+        </button>
         <p>מערכת פנימית לשימוש חיילי ומפקדי הבסיס בלבד.</p>
       </footer>
+
+      {showBlamasModal && (
+        <div className="home-modal-overlay" onClick={() => setShowBlamasModal(false)}>
+          <div className="home-modal-card compact" onClick={(event) => event.stopPropagation()}>
+            <button className="home-modal-close" onClick={() => setShowBlamasModal(false)}>×</button>
+            <h3>הגשת הצעה חדשה</h3>
+            <p>
+              במערכת זו מעלים רק הצעות בסיווג בלמ&quot;ס בלבד.
+              הצעות בסיווג אחר יש להגיש בערוץ הבסיסי הייעודי לכך.
+            </p>
+            <div className="home-modal-actions">
+              <button className="home-modal-primary" onClick={handleContinueToSuggestion}>
+                הבנתי, המשך להגשה
+              </button>
+              <button className="home-modal-secondary" onClick={() => setShowBlamasModal(false)}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showContactModal && (
+        <div className="home-modal-overlay" onClick={() => setShowContactModal(false)}>
+          <div className="home-modal-card" onClick={(event) => event.stopPropagation()}>
+            <button className="home-modal-close" onClick={() => setShowContactModal(false)}>×</button>
+            <h3>יצירת קשר עם מנהל המערכת</h3>
+            <form className="contact-form" onSubmit={handleSubmitContact}>
+              <label>
+                שם החייל
+                <input
+                  type="text"
+                  value={contactForm.fullName}
+                  onChange={(event) => handleContactChange('fullName', event.target.value)}
+                />
+              </label>
+
+              <label>
+                טייסת
+                <input
+                  type="text"
+                  value={contactForm.squadron}
+                  onChange={(event) => handleContactChange('squadron', event.target.value)}
+                />
+              </label>
+
+              <label>
+                הערות
+                <textarea
+                  rows="5"
+                  value={contactForm.notes}
+                  onChange={(event) => handleContactChange('notes', event.target.value)}
+                />
+              </label>
+
+              <div className="home-modal-actions">
+                <button type="submit" className="home-modal-primary" disabled={sendingContact}>
+                  {sendingContact ? 'שולח...' : 'שלח פנייה'}
+                </button>
+                <button type="button" className="home-modal-secondary" onClick={() => setShowContactModal(false)}>
+                  סגור
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
