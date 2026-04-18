@@ -9,6 +9,7 @@ function SoldierHome() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({
     fullName: '',
+    phone: '',
     squadron: '',
     notes: ''
   });
@@ -30,8 +31,8 @@ function SoldierHome() {
   const handleSubmitContact = async (event) => {
     event.preventDefault();
 
-    if (!contactForm.fullName.trim() || !contactForm.squadron.trim() || !contactForm.notes.trim()) {
-      alert('נא למלא שם חייל, טייסת והערות.');
+    if (!contactForm.fullName.trim() || !contactForm.phone.trim() || !contactForm.squadron.trim() || !contactForm.notes.trim()) {
+      alert('נא למלא שם חייל, טלפון, טייסת והערות.');
       return;
     }
 
@@ -48,7 +49,7 @@ function SoldierHome() {
       }
 
       alert('הפנייה נשלחה למנהלת המערכת.');
-      setContactForm({ fullName: '', squadron: '', notes: '' });
+      setContactForm({ fullName: '', phone: '', squadron: '', notes: '' });
       setShowContactModal(false);
     } catch (error) {
       console.error(error);
@@ -162,6 +163,15 @@ function SoldierHome() {
                   type="text"
                   value={contactForm.fullName}
                   onChange={(event) => handleContactChange('fullName', event.target.value)}
+                />
+              </label>
+
+              <label>
+                טלפון
+                <input
+                  type="text"
+                  value={contactForm.phone}
+                  onChange={(event) => handleContactChange('phone', event.target.value)}
                 />
               </label>
 

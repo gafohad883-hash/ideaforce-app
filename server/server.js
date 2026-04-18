@@ -234,7 +234,7 @@ ${note ? `הערת מנהל: ${note}` : ''}
   };
 }
 
-function buildManagerContactEmail({ fullName, squadron, notes }) {
+function buildManagerContactEmail({ fullName, phone, squadron, notes }) {
   return {
     from: createMailFrom(),
     to: MANAGER_EMAIL,
@@ -242,6 +242,7 @@ function buildManagerContactEmail({ fullName, squadron, notes }) {
     text: `התקבלה פנייה חדשה מתוך מסך הפתיחה.
 
 שם החייל: ${fullName || '-'}
+טלפון: ${phone || '-'}
 טייסת: ${squadron || '-'}
 הערות: ${notes || '-'}`,
     html: `
@@ -250,6 +251,7 @@ function buildManagerContactEmail({ fullName, squadron, notes }) {
         <table style="border-collapse:collapse;width:100%;max-width:640px;">
           <tbody>
             <tr><td><strong>שם החייל</strong></td><td>${fullName || '-'}</td></tr>
+            <tr><td><strong>טלפון</strong></td><td>${phone || '-'}</td></tr>
             <tr><td><strong>טייסת</strong></td><td>${squadron || '-'}</td></tr>
             <tr><td><strong>הערות</strong></td><td>${notes || '-'}</td></tr>
           </tbody>
@@ -367,14 +369,19 @@ app.get('/api/suggestions', async (req, res) => {
 
 app.post('/api/contact-manager', async (req, res) => {
   try {
-    const { fullName, squadron, notes } = req.body;
+    const { fullName, phone, squadron, notes } = req.body;
 
-    if (!fullName || !squadron || !notes) {
+    if (!fullName || !phone || !squadron || !notes) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    if (MANAGER_EMAIL) {
-      await sendEmail(buildManagerContactEmail({ fullName, squadron, notes }));
+    if (!MANAGER_EMAIL) {
+      return res.status(500).json({ error: 'Manager email is not configured' });
+    }
+
+    const emailSent = await sendEmail(buildManagerContactEmail({ fullName, phone, squadron, notes }));
+    if (!emailSent) {
+      return res.status(500).json({ error: 'Failed to send email' });
     }
 
     res.status(201).json({ message: 'Message sent' });
