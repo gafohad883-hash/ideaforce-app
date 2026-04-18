@@ -53,6 +53,7 @@ function buildTransporter() {
 }
 
 const transporter = buildTransporter();
+let mailTransportReady = false;
 
 async function verifyMailTransporter() {
   if (!transporter) {
@@ -61,8 +62,10 @@ async function verifyMailTransporter() {
 
   try {
     await transporter.verify();
+    mailTransportReady = true;
     console.log('Mail transporter verified successfully');
   } catch (error) {
+    mailTransportReady = false;
     console.error('Mail transporter verification failed:', error.message);
   }
 }
@@ -133,15 +136,24 @@ function mapDuplicateReason(reason) {
 async function sendEmail(mailOptions) {
   if (!transporter) {
     console.warn('Skipped sending email: transporter is disabled');
-    return false;
+    return {
+      success: false,
+      error: 'Mail transporter is disabled'
+    };
   }
 
   try {
     await transporter.sendMail(mailOptions);
-    return true;
+    return {
+      success: true,
+      error: ''
+    };
   } catch (error) {
     console.error('Email send failed:', error.message);
-    return false;
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 
@@ -353,6 +365,8 @@ app.get('/api/health', async (req, res) => {
     status: 'ok',
     uptimeSeconds: Math.round(process.uptime()),
     mongoConnected,
+    mailConfigured: Boolean(MAIL_USER && MAIL_PASSWORD && MANAGER_EMAIL),
+    mailTransportReady,
     timestamp: new Date().toISOString()
   });
 });
@@ -379,9 +393,9 @@ app.post('/api/contact-manager', async (req, res) => {
       return res.status(500).json({ error: 'Manager email is not configured' });
     }
 
-    const emailSent = await sendEmail(buildManagerContactEmail({ fullName, phone, squadron, notes }));
-    if (!emailSent) {
-      return res.status(500).json({ error: 'Failed to send email' });
+    const emailResult = await sendEmail(buildManagerContactEmail({ fullName, phone, squadron, notes }));
+    if (!emailResult.success) {
+      return res.status(500).json({ error: emailResult.error || 'Failed to send email' });
     }
 
     res.status(201).json({ message: 'Message sent' });
@@ -523,11 +537,20 @@ app.patch('/api/suggestions/:id/status', async (req, res) => {
 
     await suggestion.save();
 
+    let emailSent = null;
+    let emailError = '';
+
     if (suggestion.soldier?.email && suggestion.soldier.email.includes('@')) {
-      await sendEmail(buildSoldierStatusEmail(suggestion.toObject(), status, note || ''));
+      const emailResult = await sendEmail(buildSoldierStatusEmail(suggestion.toObject(), status, note || ''));
+      emailSent = emailResult.success;
+      emailError = emailResult.error || '';
     }
 
-    res.json(suggestion);
+    res.json({
+      suggestion,
+      emailSent,
+      emailError
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Update failed' });

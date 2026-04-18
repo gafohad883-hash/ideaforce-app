@@ -112,13 +112,20 @@ function AdminDashboard() {
         return;
       }
 
-      const updatedSuggestion = await res.json();
+      const result = await res.json();
+      const updatedSuggestion = result.suggestion;
       setSuggestions((prev) => prev.map((s) => (
         s.id === updatedSuggestion.id || s._id === updatedSuggestion._id ? updatedSuggestion : s
       )));
 
       if (selectedSuggestion && (selectedSuggestion.id === updatedSuggestion.id || selectedSuggestion._id === updatedSuggestion._id)) {
         setSelectedSuggestion(updatedSuggestion);
+      }
+
+      if (result.emailSent === false) {
+        alert(`הסטטוס נשמר, אבל המייל לחייל לא נשלח.\n${result.emailError || ''}`.trim());
+      } else if (result.emailSent === true) {
+        alert('הסטטוס עודכן והמייל נשלח לחייל.');
       }
     } catch (error) {
       console.error(error);
