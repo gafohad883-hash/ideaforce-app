@@ -56,6 +56,10 @@ function App() {
           }
         />
       </Routes>
+
+      <div className="app-copyright">
+        כל הזכויות שמורות לליאור מזוז
+      </div>
     </div>
   );
 }
