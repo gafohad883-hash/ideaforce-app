@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import API_BASE_URL from '../config/api';
+import AppToast from '../components/AppToast';
 import '../styles/AdminDashboard.css';
 
+// מסך הניהול המרכזי של ההצעות כולל חיפוש, החלטות ניהוליות, ועדת ייעול וייצוא.
 function AdminDashboard() {
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
@@ -17,7 +19,9 @@ function AdminDashboard() {
   const [duplicateNote, setDuplicateNote] = useState('');
   const [committeeDecision, setCommitteeDecision] = useState(false);
   const [committeeDate, setCommitteeDate] = useState('');
+  const [toast, setToast] = useState({ message: '', tone: 'info' });
 
+  // טוען את כל ההצעות מהשרת ומעדכן את המסך הניהולי.
   const fetchSuggestions = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/suggestions`);
@@ -48,6 +52,7 @@ function AdminDashboard() {
     setCommitteeDate(selectedSuggestion.committeeDate || '');
   }, [selectedSuggestion]);
 
+  // מציג תאריך בפורמט קריא למנהל.
   const formatDate = (value) => {
     if (!value) {
       return '-';
@@ -61,6 +66,7 @@ function AdminDashboard() {
     return value;
   };
 
+  // מחלץ את זמן העדכון האחרון לצורך תצוגה ומיון.
   const getLastUpdate = (suggestion) => {
     if (suggestion.history?.length) {
       return suggestion.history[suggestion.history.length - 1]?.date || suggestion.updatedAt || suggestion.date;
@@ -69,6 +75,7 @@ function AdminDashboard() {
     return suggestion.updatedAt || suggestion.date;
   };
 
+  // מאתר הצעה קשורה לפי מזהה הכפילות שנשמר על ההצעה.
   const getRelatedSuggestion = (suggestion) => {
     if (!suggestion?.duplicateOfId) {
       return null;
@@ -77,6 +84,7 @@ function AdminDashboard() {
     return suggestions.find((item) => item.id === suggestion.duplicateOfId) || null;
   };
 
+  // עובר ישירות מהצעה אחת להצעה המקושרת אליה לצורך השוואה מהירה.
   const openRelatedSuggestion = (suggestion) => {
     const relatedSuggestion = getRelatedSuggestion(suggestion);
     if (relatedSuggestion) {
@@ -84,6 +92,7 @@ function AdminDashboard() {
     }
   };
 
+  // מוחק הצעה אחת לצמיתות לאחר אישור המנהל.
   const handleDelete = async (id) => {
     if (!window.confirm('האם למחוק את ההצעה לצמיתות?')) {
       return;
@@ -100,6 +109,7 @@ function AdminDashboard() {
     }
   };
 
+  // מעדכן סטטוס להצעה ושומר גם אינדיקציה אם המייל לחייל באמת נשלח.
   const handleStatusChange = async (id, newStatus) => {
     try {
       const res = await fetch(`${API_BASE_URL}/suggestions/${id}/status`, {
@@ -123,15 +133,17 @@ function AdminDashboard() {
       }
 
       if (result.emailSent === false) {
-        alert(`הסטטוס נשמר, אבל המייל לחייל לא נשלח.\n${result.emailError || ''}`.trim());
+        setToast({ message: `הסטטוס נשמר, אבל המייל לחייל לא נשלח. ${result.emailError || ''}`.trim(), tone: 'error' });
       } else if (result.emailSent === true) {
-        alert('הסטטוס עודכן והמייל נשלח לחייל.');
+        setToast({ message: 'הסטטוס עודכן והמייל נשלח לחייל.', tone: 'success' });
       }
     } catch (error) {
       console.error(error);
+      setToast({ message: 'לא הצלחנו לעדכן את הסטטוס כרגע.', tone: 'error' });
     }
   };
 
+  // שומר את החלטת המנהל לגבי כפילות והערת ההסבר שלה.
   const handleDuplicateReviewSave = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/suggestions/${id}/duplicate-review`, {
@@ -155,9 +167,11 @@ function AdminDashboard() {
       setSelectedSuggestion(updatedSuggestion);
     } catch (error) {
       console.error(error);
+      setToast({ message: 'שמירת החלטת הכפילות נכשלה.', tone: 'error' });
     }
   };
 
+  // שומר האם ההצעה תעלה לוועדת ייעול ובאיזה תאריך.
   const handleCommitteeSave = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/suggestions/${id}/committee`, {
@@ -179,11 +193,14 @@ function AdminDashboard() {
         s.id === updatedSuggestion.id || s._id === updatedSuggestion._id ? updatedSuggestion : s
       )));
       setSelectedSuggestion(updatedSuggestion);
+      setToast({ message: 'החלטת הוועדה נשמרה בהצלחה.', tone: 'success' });
     } catch (error) {
       console.error(error);
+      setToast({ message: 'שמירת החלטת הוועדה נכשלה.', tone: 'error' });
     }
   };
 
+  // מתרגם את מצב הכפילות לטקסט ברור ואחיד בממשק המנהל.
   const getDuplicateDecisionLabel = (reviewStatus, isDuplicate) => {
     switch (reviewStatus) {
       case 'confirmed_duplicate':
@@ -199,10 +216,12 @@ function AdminDashboard() {
     }
   };
 
+  // בודק אם להצעה יש בכלל מידע רלוונטי על כפילות להצגה במסך.
   const hasDuplicateState = (suggestion) => (
     suggestion?.isDuplicate || suggestion?.duplicateReviewStatus === 'not_duplicate'
   );
 
+  // ממפה סטטוס לצבע תצוגה עקבי בכרטיסים ובמודל.
   const getStatusClass = (status) => {
     switch (status) {
       case 'מאושר':
@@ -216,6 +235,7 @@ function AdminDashboard() {
     }
   };
 
+  // מחשב כרטיסי סיכום מהירים לראש הדף.
   const summaryCards = useMemo(() => ([
     { label: 'סה"כ הצעות', value: suggestions.length, tone: 'neutral' },
     { label: 'בהמתנה', value: suggestions.filter((s) => s.status === 'בהמתנה').length, tone: 'gray' },
@@ -223,6 +243,7 @@ function AdminDashboard() {
     { label: 'כפילויות', value: suggestions.filter((s) => hasDuplicateState(s)).length, tone: 'gold' }
   ]), [suggestions]);
 
+  // מרכיב את רשימת ההצעות לאחר חיפוש, סינון ומיון.
   const filteredSuggestions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -254,6 +275,7 @@ function AdminDashboard() {
     return filtered;
   }, [suggestions, searchTerm, statusFilter, sortBy]);
 
+  // מנקה תווים מיוחדים לפני ייצוא HTML לאקסל.
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -261,6 +283,7 @@ function AdminDashboard() {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+  // בונה את השורות המיוצאות לאקסל מתוך ההצעות שנבחרו.
   const buildExcelRows = (items) => items.map((suggestion) => ({
     'מספר הצעה': suggestion.id || '',
     'שם ההצעה': suggestion.title || '',
@@ -275,6 +298,7 @@ function AdminDashboard() {
     'עדכון אחרון': formatDate(getLastUpdate(suggestion))
   }));
 
+  // יוצר קובץ אקסל בסיסי מתוך שורות שכבר הוכנו לייצוא.
   const exportRowsToExcel = (rows, fileName) => {
     const headers = Object.keys(rows[0] || {});
     const tableHead = headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('');
@@ -310,15 +334,19 @@ function AdminDashboard() {
     saveAs(blob, `${fileName}.xls`);
   };
 
+  // מייצא הצעה בודדת לקובץ אקסל.
   const exportSuggestionToExcel = (suggestion) => {
     exportRowsToExcel(buildExcelRows([suggestion]), `IdeaForce_${suggestion.id}`);
   };
 
+  // מייצא את כל ההצעות המוצגות כרגע לאחר סינון.
   const exportFilteredSuggestionsToExcel = () => {
     exportRowsToExcel(buildExcelRows(filteredSuggestions), 'IdeaForce_Suggestions');
   };
 
+  // יוצר מסמך Word מסודר עבור הצעה אחת לצורך הדפסה או שיתוף.
   const generateWordDocument = (suggestion) => {
+    // יוצר פסקה מיושרת לימין עם תמיכה נוחה בעברית עבור מסמך ה-Word.
     const createHebrewParagraph = (text, options = {}) => (
       new Paragraph({
         children: [new TextRun({ text, size: 24, font: 'Arial', ...options.textOptions })],
@@ -367,6 +395,7 @@ function AdminDashboard() {
 
   return (
     <div className="admin-shell">
+      <AppToast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'info' })} />
       <header className="admin-hero">
         <div>
           <span className="admin-kicker">מרחב ניהולי</span>

@@ -29,11 +29,13 @@ function NewSuggestionDetails() {
     }
   }, [soldierData, navigate]);
 
+  // מעדכן את שדות טופס ההצעה לפי הקלט שהחייל מזין בכל רגע.
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  // שומר את ההצעה בשרת ומעביר למסך ההצלחה גם מידע על כפילות וגם על מייל ההתראה למנהל.
   const handleSubmit = async () => {
     if (!formData.title || !formData.currentState || !formData.proposal || !formData.domain || !formData.unit) {
       setError('נא למלא את כל שדות החובה');
@@ -68,7 +70,9 @@ function NewSuggestionDetails() {
           state: {
             isDuplicate: Boolean(data.isDuplicate || duplicateInfo.isDuplicate),
             duplicateOfId: data.duplicateOfId || duplicateInfo.duplicateOfId || '',
-            duplicateOfTitle: data.duplicateOfTitle || duplicateInfo.duplicateOfTitle || ''
+            duplicateOfTitle: data.duplicateOfTitle || duplicateInfo.duplicateOfTitle || '',
+            emailSent: data.emailSent !== false,
+            emailError: data.emailError || ''
           }
         });
         return;

@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config/api';
+import AppToast from '../components/AppToast';
 import '../styles/SoldierSuggestions.css';
 
+// מסך ההצעות של החייל כולל איתור לפי תעודת זהות, חיפוש, סינון ומעבר לפרטי ההצעה.
 function SoldierSuggestions() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,7 +16,9 @@ function SoldierSuggestions() {
   const [statusFilter, setStatusFilter] = useState('הכל');
   const [domainFilter, setDomainFilter] = useState('הכל');
   const [sortBy, setSortBy] = useState('updated_desc');
+  const [toast, setToast] = useState({ message: '', tone: 'info' });
 
+  // מחזיר את המסך בדיוק למצב שבו החייל עזב אותו לפני כניסה לפרטי הצעה.
   useEffect(() => {
     const restoreState = location.state?.restoreState;
 
@@ -33,9 +37,10 @@ function SoldierSuggestions() {
     navigate(location.pathname, { replace: true, state: null });
   }, [location.pathname, location.state, navigate]);
 
+  // מאתר את כל ההצעות של החייל לפי תעודת זהות ושומר אותן למסך.
   const handleSearch = async () => {
     if (inputId.length !== 9) {
-      alert('נא להזין תעודת זהות תקינה (9 ספרות)');
+      setToast({ message: 'נא להזין תעודת זהות תקינה (9 ספרות).', tone: 'error' });
       return;
     }
 
@@ -56,11 +61,13 @@ function SoldierSuggestions() {
       }
     } catch (error) {
       console.error('Error:', error);
+      setToast({ message: 'לא הצלחנו לטעון את ההצעות כרגע.', tone: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  // ממפה סטטוס למחלקת עיצוב כדי לשמור על תגי סטטוס אחידים וברורים.
   const getStatusClass = (status) => {
     switch (status) {
       case 'מאושר':
@@ -74,6 +81,7 @@ function SoldierSuggestions() {
     }
   };
 
+  // ממיר תאריך גולמי לפורמט קריא בעברית עבור המסך.
   const formatDate = (dateValue) => {
     if (!dateValue) return '-';
     const parsedDate = new Date(dateValue);
@@ -83,6 +91,7 @@ function SoldierSuggestions() {
     return dateValue;
   };
 
+  // מחלץ את תאריך העדכון האחרון מתוך ההיסטוריה או מנתוני ההצעה.
   const getLastUpdateDate = (item) => {
     if (item.history && item.history.length > 0) {
       return item.history[item.history.length - 1]?.date || item.updatedAt || item.date;
@@ -90,6 +99,7 @@ function SoldierSuggestions() {
     return item.updatedAt || item.date;
   };
 
+  // בונה רשימת תחומים דינמית מתוך ההצעות שנמצאו עבור הסינון.
   const domainOptions = useMemo(() => {
     const domains = new Set(
       suggestions
@@ -100,6 +110,7 @@ function SoldierSuggestions() {
     return ['הכל', ...Array.from(domains)];
   }, [suggestions]);
 
+  // מחשב את רשימת ההצעות הסופית אחרי חיפוש, סינון ומיון.
   const filteredSuggestions = useMemo(() => {
     let result = [...suggestions];
 
@@ -136,6 +147,7 @@ function SoldierSuggestions() {
     return result;
   }, [suggestions, titleSearch, statusFilter, domainFilter, sortBy]);
 
+  // פותח את פרטי ההצעה ושומר את מצב המסך כדי לחזור אליו בדיוק אחר כך.
   const openSuggestionDetails = (item) => {
     navigate('/my-suggestions/details', {
       state: {
@@ -155,6 +167,7 @@ function SoldierSuggestions() {
 
   return (
     <div className="mysug-shell">
+      <AppToast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'info' })} />
       <header className="mysug-header">
         <span className="mysug-kicker">מרחב החייל</span>
         <h2>ההצעות שלי</h2>

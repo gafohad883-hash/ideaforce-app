@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/SoldierSuggestionDetails.css';
 
+// מסך פירוט מלא להצעה אחת כולל תוכן, תאריכים, כפילויות והיסטוריית סטטוסים.
 function SoldierSuggestionDetails() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ function SoldierSuggestionDetails() {
     return null;
   }
 
+  // ממיר תאריך לפורמט תצוגה קריא בעברית.
   const formatDate = (dateValue) => {
     if (!dateValue) return '-';
 
@@ -24,6 +26,7 @@ function SoldierSuggestionDetails() {
     return dateValue;
   };
 
+  // מחלץ את תאריך שינוי הסטטוס האחרון מתוך ההיסטוריה של ההצעה.
   const getLastStatusDate = () => {
     if (suggestion.history && suggestion.history.length > 0) {
       return suggestion.history[suggestion.history.length - 1]?.date || suggestion.updatedAt || suggestion.date;
@@ -31,6 +34,7 @@ function SoldierSuggestionDetails() {
     return suggestion.updatedAt || suggestion.date;
   };
 
+  // מתרגם את קוד החלטת הכפילות לטקסט ברור לחייל.
   const getDuplicateDecisionLabel = (reviewStatus, isDuplicate) => {
     switch (reviewStatus) {
       case 'confirmed_duplicate':
@@ -46,6 +50,7 @@ function SoldierSuggestionDetails() {
     }
   };
 
+  // מחזיר את החייל למסך ההצעות עם כל מצב החיפוש הקודם.
   const goBackToSuggestions = () => {
     navigate('/my-suggestions', {
       state: {

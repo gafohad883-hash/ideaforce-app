@@ -7,6 +7,7 @@ function SuggestionSuccess() {
   const location = useLocation();
   const successState = location.state || {};
   const isDuplicate = Boolean(successState.isDuplicate);
+  const emailSent = successState.emailSent !== false;
   const duplicateHint = successState.duplicateOfId
     ? `נמצאה התאמה אפשרית להצעה ${successState.duplicateOfId}${successState.duplicateOfTitle ? ` - ${successState.duplicateOfTitle}` : ''}.`
     : 'ההצעה נשמרה ולא נחסמה, כדי לאפשר בדיקה אנושית בהמשך.';
@@ -26,6 +27,16 @@ function SuggestionSuccess() {
           <div className="success-duplicate-note">
             <strong>סומן ככפילות אפשרית</strong>
             <span>{duplicateHint}</span>
+          </div>
+        )}
+
+        {!emailSent && (
+          <div className="success-duplicate-note">
+            <strong>׳©׳™׳׳” ׳׳‘</strong>
+            <span>
+              ׳”׳”׳¦׳¢׳” ׳ ׳©׳׳¨׳” ׳‘׳”׳¦׳׳—׳”, ׳׳ ׳”׳׳™׳™׳ ׳׳׳ ׳”׳ ׳׳ ׳ ׳©׳׳—׳”.
+              {successState.emailError ? ` ${successState.emailError}` : ''}
+            </span>
           </div>
         )}
 

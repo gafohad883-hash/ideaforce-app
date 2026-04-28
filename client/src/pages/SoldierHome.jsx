@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API_BASE_URL from '../config/api';
+import AppToast from '../components/AppToast';
 import '../styles/SoldierHome.css';
 
+// מסך הבית של החייל שמרכז כניסה להגשת הצעה, צפייה בהצעות ופנייה למנהלת המערכת.
 function SoldierHome() {
   const navigate = useNavigate();
   const [showBlamasModal, setShowBlamasModal] = useState(false);
@@ -14,25 +16,30 @@ function SoldierHome() {
     notes: ''
   });
   const [sendingContact, setSendingContact] = useState(false);
+  const [toast, setToast] = useState({ message: '', tone: 'info' });
 
+  // פותח הודעה על בלמ"ס לפני מעבר למסך הגשת הצעה חדשה.
   const handleOpenNewSuggestion = () => {
     setShowBlamasModal(true);
   };
 
+  // ממשיך למסך ההגשה רק אחרי שהחייל ראה את הודעת הסיווג.
   const handleContinueToSuggestion = () => {
     setShowBlamasModal(false);
     navigate('/new-suggestion');
   };
 
+  // מעדכן שדה יחיד בטופס יצירת הקשר בלי לשכפל לוגיקה לכל קלט.
   const handleContactChange = (field, value) => {
     setContactForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  // שולח פנייה למנהלת המערכת ומציג הודעה מעוצבת במקום alert רגיל.
   const handleSubmitContact = async (event) => {
     event.preventDefault();
 
     if (!contactForm.fullName.trim() || !contactForm.phone.trim() || !contactForm.squadron.trim() || !contactForm.notes.trim()) {
-      alert('נא למלא שם חייל, טלפון, טייסת והערות.');
+      setToast({ message: 'נא למלא שם חייל, טלפון, טייסת והערות.', tone: 'error' });
       return;
     }
 
@@ -45,15 +52,16 @@ function SoldierHome() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send');
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || 'Failed to send');
       }
 
-      alert('הפנייה נשלחה למנהלת המערכת.');
+      setToast({ message: 'הפנייה נשלחה למנהלת המערכת.', tone: 'success' });
       setContactForm({ fullName: '', phone: '', squadron: '', notes: '' });
       setShowContactModal(false);
     } catch (error) {
       console.error(error);
-      alert('לא הצלחנו לשלוח את הפנייה כרגע. נסה שוב בעוד רגע.');
+      setToast({ message: `לא הצלחנו לשלוח את הפנייה כרגע. ${error.message || ''}`.trim(), tone: 'error' });
     } finally {
       setSendingContact(false);
     }
@@ -61,6 +69,7 @@ function SoldierHome() {
 
   return (
     <div className="home-shell">
+      <AppToast message={toast.message} tone={toast.tone} onClose={() => setToast({ message: '', tone: 'info' })} />
       <div className="home-top-bar">
         <div className="home-emblem icon-only">
           <div className="emblem-logo-frame">
@@ -86,8 +95,8 @@ function SoldierHome() {
 
       <main className="home-main">
         <section className="home-hero-card">
-          <div className="hero-card-badge">מרכז חדשנות ושיפור מתמיד</div>
-          <h2 className="home-title">ברוכים הבאים למערכת ההצעות המבצעית של הבסיס</h2>
+          <div className="hero-card-badge">מפותח על ידי גף אוה"ד תחזוקה ביסל"א</div>
+          <h2 className="home-title">ברוכים הבאים למערכת הגשת הצעות ייעול</h2>
           <p className="home-text">
             כאן ניתן להגיש הצעות לשיפור תהליכים, בטיחות, הדרכה, איכות והתייעלות,
             ולצפות בכל רגע מה מצב ההצעה ומה השתנה מאז ההגשה.

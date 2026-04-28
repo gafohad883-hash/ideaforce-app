@@ -32,6 +32,7 @@ if (fs.existsSync(buildPath)) {
   app.use(express.static(buildPath));
 }
 
+// יוצר חיבור לשרת המיילים רק אם קיימים כל משתני הסביבה הנדרשים.
 function buildTransporter() {
   if (!MAIL_USER || !MAIL_PASSWORD) {
     console.warn('Mail transporter disabled: missing MAIL_USER or MAIL_PASSWORD');
@@ -55,6 +56,7 @@ function buildTransporter() {
 const transporter = buildTransporter();
 let mailTransportReady = false;
 
+// בודק בזמן עליית השרת שהחיבור לשרת המיילים באמת תקין.
 async function verifyMailTransporter() {
   if (!transporter) {
     return;
@@ -70,10 +72,25 @@ async function verifyMailTransporter() {
   }
 }
 
+// מוודא לפני כל שליחה שהחיבור לשרת המיילים תקין, גם אם בזמן העלייה הראשונית הוא עוד לא היה מוכן.
+async function ensureMailTransportReady() {
+  if (!transporter) {
+    return false;
+  }
+
+  if (!mailTransportReady) {
+    await verifyMailTransporter();
+  }
+
+  return mailTransportReady;
+}
+
+// מחזיר כתובת שולח אחידה לכל המיילים שהמערכת מפיקה.
 function createMailFrom() {
   return `"${MAIL_FROM_NAME}" <${MAIL_USER || MANAGER_EMAIL}>`;
 }
 
+// ממיר תאריך גולמי לפורמט תצוגה ידידותי בעברית.
 function formatDateTime(dateValue) {
   if (!dateValue) {
     return '-';
@@ -87,6 +104,7 @@ function formatDateTime(dateValue) {
   return parsedDate.toLocaleString('he-IL');
 }
 
+// מנרמל טקסט לפני חישוב דמיון כדי לצמצם השפעה של רווחים וסימנים.
 function normalizeText(text = '') {
   return text
     .toString()
@@ -96,11 +114,13 @@ function normalizeText(text = '') {
     .replace(/\s+/g, ' ');
 }
 
+// מפרק טקסט לאוסף מילים נקי לצורך השוואת דמיון בין הצעות.
 function getWordsSet(text = '') {
   const normalized = normalizeText(text);
   return new Set(normalized.split(' ').filter((word) => word.length > 1));
 }
 
+// מחשב רמת דמיון בין שתי הצעות לפי חפיפה בין מילים.
 function calculateSimilarity(text1 = '', text2 = '') {
   const words1 = getWordsSet(text1);
   const words2 = getWordsSet(text2);
@@ -120,6 +140,7 @@ function calculateSimilarity(text1 = '', text2 = '') {
   return commonCount / Math.max(words1.size, words2.size);
 }
 
+// מתרגם קוד פנימי של סיבת כפילות להסבר קריא בעברית.
 function mapDuplicateReason(reason) {
   switch (reason) {
     case 'exact-title-match':
@@ -133,6 +154,7 @@ function mapDuplicateReason(reason) {
   }
 }
 
+// שולח מייל עם timeout כדי שלא ניתקע לנצח במקרה של בעיית SMTP או רשת.
 async function sendEmail(mailOptions) {
   if (!transporter) {
     console.warn('Skipped sending email: transporter is disabled');
@@ -143,7 +165,17 @@ async function sendEmail(mailOptions) {
   }
 
   try {
-    await transporter.sendMail(mailOptions);
+    const sendResult = await Promise.race([
+      transporter.sendMail(mailOptions),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Mail send timeout after 15 seconds')), 15000);
+      })
+    ]);
+
+    if (!sendResult) {
+      throw new Error('Mail send returned empty response');
+    }
+
     return {
       success: true,
       error: ''
@@ -157,6 +189,42 @@ async function sendEmail(mailOptions) {
   }
 }
 
+// מנסה לשלוח מייל יותר מפעם אחת כדי להתגבר על תקלות זמניות של חיבור, השהיה או שרת חיצוני.
+async function sendEmailWithRetry(mailOptions, maxAttempts = 2) {
+  let lastResult = { success: false, error: 'Mail send was not attempted' };
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const isReady = await ensureMailTransportReady();
+
+    if (!isReady) {
+      lastResult = {
+        success: false,
+        error: 'Mail transporter is not ready'
+      };
+    } else {
+      lastResult = await sendEmail(mailOptions);
+    }
+
+    if (lastResult.success) {
+      return {
+        ...lastResult,
+        attempts: attempt
+      };
+    }
+
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      mailTransportReady = false;
+    }
+  }
+
+  return {
+    ...lastResult,
+    attempts: maxAttempts
+  };
+}
+
+// בונה את המייל שהמנהל מקבל כשנכנסת הצעה חדשה למערכת.
 function buildManagerSuggestionEmail(suggestion, duplicateInfo) {
   const soldierName = suggestion.soldier?.fullName || suggestion.soldier?.soldierName || 'לא צוין';
   const duplicateText = duplicateInfo?.isDuplicate
@@ -209,6 +277,7 @@ ${duplicateText}
   };
 }
 
+// בונה את המייל שהחייל מקבל כאשר סטטוס ההצעה שלו משתנה.
 function buildSoldierStatusEmail(suggestion, status, note = '') {
   const soldierName = suggestion.soldier?.fullName || suggestion.soldier?.soldierName || '';
   const lastUpdateDate = suggestion.updatedAt || new Date().toISOString();
@@ -246,6 +315,7 @@ ${note ? `הערת מנהל: ${note}` : ''}
   };
 }
 
+// בונה את מייל יצירת הקשר שנשלח למנהלת המערכת מתוך מסך הבית.
 function buildManagerContactEmail({ fullName, phone, squadron, notes }) {
   return {
     from: createMailFrom(),
@@ -273,6 +343,7 @@ function buildManagerContactEmail({ fullName, phone, squadron, notes }) {
   };
 }
 
+// שולח פינג יזום לשרת כדי לצמצם מצבי שינה בפלטפורמות חיצוניות.
 function performKeepAlivePing(targetUrl) {
   try {
     const parsedUrl = new URL(targetUrl);
@@ -295,6 +366,7 @@ function performKeepAlivePing(targetUrl) {
   }
 }
 
+// מפעיל מנגנון ping מחזורי רק כאשר הוגדר לכך env מתאים.
 function startKeepAlive() {
   // חשוב: פינג פנימי עוזר רק אם התהליך כבר רץ. בשרתים שנרדמים באמת עדיין צריך שירות חיצוני
   // כמו UptimeRobot שיפגע בנתיב health באופן קבוע.
@@ -335,6 +407,8 @@ const suggestionSchema = new mongoose.Schema({
     default: false
   },
   committeeDate: String,
+  managerNotificationSentAt: String,
+  managerNotificationError: String,
   classification: String,
   title: String,
   currentState: String,
@@ -365,6 +439,7 @@ app.get('/api/health', async (req, res) => {
     status: 'ok',
     uptimeSeconds: Math.round(process.uptime()),
     mongoConnected,
+    managerEmailConfigured: Boolean(MANAGER_EMAIL),
     mailConfigured: Boolean(MAIL_USER && MAIL_PASSWORD && MANAGER_EMAIL),
     mailTransportReady,
     timestamp: new Date().toISOString()
@@ -393,12 +468,19 @@ app.post('/api/contact-manager', async (req, res) => {
       return res.status(500).json({ error: 'Manager email is not configured' });
     }
 
-    const emailResult = await sendEmail(buildManagerContactEmail({ fullName, phone, squadron, notes }));
+    const emailResult = await sendEmailWithRetry(buildManagerContactEmail({ fullName, phone, squadron, notes }));
     if (!emailResult.success) {
-      return res.status(500).json({ error: emailResult.error || 'Failed to send email' });
+      return res.status(500).json({
+        error: emailResult.error || 'Failed to send email',
+        attempts: emailResult.attempts || 0
+      });
     }
 
-    res.status(201).json({ message: 'Message sent' });
+    res.status(201).json({
+      message: 'Message sent',
+      emailSent: true,
+      attempts: emailResult.attempts || 1
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to send contact message' });
@@ -481,6 +563,8 @@ app.post('/api/suggestions', async (req, res) => {
       duplicateScore,
       duplicateCheckedAt: new Date().toISOString(),
       displayInCommittee: false,
+      managerNotificationSentAt: '',
+      managerNotificationError: '',
       status: 'בהמתנה',
       history: [
         {
@@ -505,13 +589,29 @@ app.post('/api/suggestions', async (req, res) => {
           isDuplicate: false
         };
 
-    if (MANAGER_EMAIL) {
-      await sendEmail(buildManagerSuggestionEmail(newSuggestion.toObject(), duplicateInfo));
+    let emailSent = false;
+    let emailError = '';
+    let emailAttempts = 0;
+
+    if (!MANAGER_EMAIL) {
+      emailError = 'Manager email is not configured';
+    } else {
+      const emailResult = await sendEmailWithRetry(buildManagerSuggestionEmail(newSuggestion.toObject(), duplicateInfo));
+      emailSent = emailResult.success;
+      emailError = emailResult.error || '';
+      emailAttempts = emailResult.attempts || 0;
     }
+
+    newSuggestion.managerNotificationSentAt = emailSent ? new Date().toISOString() : '';
+    newSuggestion.managerNotificationError = emailSent ? '' : emailError;
+    await newSuggestion.save();
 
     res.status(201).json({
       ...newSuggestion.toObject(),
-      duplicateInfo
+      duplicateInfo,
+      emailSent,
+      emailError,
+      emailAttempts
     });
   } catch (err) {
     console.error(err);
