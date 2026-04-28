@@ -14,6 +14,10 @@ const MANAGER_EMAIL = process.env.MANAGER_EMAIL || process.env.MAIL_USER || '';
 const MAIL_USER = process.env.MAIL_USER || '';
 const MAIL_PASSWORD = process.env.MAIL_PASSWORD || '';
 const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || 'IdeaForce';
+const MAIL_SERVICE = process.env.MAIL_SERVICE || '';
+const MAIL_HOST = process.env.MAIL_HOST || 'smtp.gmail.com';
+const MAIL_PORT = Number(process.env.MAIL_PORT || 465);
+const MAIL_SECURE = String(process.env.MAIL_SECURE || 'true') === 'true';
 const KEEP_ALIVE_ENABLED = process.env.KEEP_ALIVE_ENABLED === 'true';
 const KEEP_ALIVE_URL = process.env.KEEP_ALIVE_URL || '';
 const KEEP_ALIVE_INTERVAL_MINUTES = Number(process.env.KEEP_ALIVE_INTERVAL_MINUTES || 10);
@@ -32,49 +36,115 @@ if (fs.existsSync(buildPath)) {
   app.use(express.static(buildPath));
 }
 
-// יוצר חיבור לשרת המיילים רק אם קיימים כל משתני הסביבה הנדרשים.
-function buildTransporter() {
+// יוצר רשימת תצורות חיבור אפשריות כדי לאפשר נפילה אל חיבור חלופי אם Gmail/Render רגישים לתצורה מסוימת.
+function buildTransportOptionsList() {
   if (!MAIL_USER || !MAIL_PASSWORD) {
     console.warn('Mail transporter disabled: missing MAIL_USER or MAIL_PASSWORD');
-    return null;
+    return [];
   }
 
-  return nodemailer.createTransport({
-    host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    port: Number(process.env.MAIL_PORT || 465),
-    secure: String(process.env.MAIL_SECURE || 'true') === 'true',
+  const baseAuth = {
+    user: MAIL_USER,
+    pass: MAIL_PASSWORD
+  };
+
+  const baseTls = {
+    rejectUnauthorized: false
+  };
+
+  const optionsList = [{
+    host: MAIL_HOST,
+    port: MAIL_PORT,
+    secure: MAIL_SECURE,
     auth: {
-      user: MAIL_USER,
-      pass: MAIL_PASSWORD
+      ...baseAuth
     },
     tls: {
-      rejectUnauthorized: false
+      ...baseTls
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000
+  }];
+
+  const shouldTryGmailFallbacks = MAIL_SERVICE === 'gmail' || MAIL_HOST.includes('gmail') || MAIL_USER.endsWith('@gmail.com');
+
+  if (shouldTryGmailFallbacks) {
+    optionsList.push({
+      service: 'gmail',
+      auth: {
+        ...baseAuth
+      },
+      tls: {
+        ...baseTls
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000
+    });
+
+    optionsList.push({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: {
+        ...baseAuth
+      },
+      tls: {
+        ...baseTls
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000
+    });
+  }
+
+  const seen = new Set();
+  return optionsList.filter((options) => {
+    const key = JSON.stringify(options);
+    if (seen.has(key)) {
+      return false;
     }
+    seen.add(key);
+    return true;
   });
 }
 
-const transporter = buildTransporter();
+// הופך כל תצורה ל־transporter אמיתי שניתן לאמת ולשלוח דרכו.
+function buildTransporters() {
+  return buildTransportOptionsList().map((options) => nodemailer.createTransport(options));
+}
+
+const transporters = buildTransporters();
+let activeTransporterIndex = -1;
 let mailTransportReady = false;
 
 // בודק בזמן עליית השרת שהחיבור לשרת המיילים באמת תקין.
 async function verifyMailTransporter() {
-  if (!transporter) {
+  if (!transporters.length) {
     return;
   }
 
-  try {
-    await transporter.verify();
-    mailTransportReady = true;
-    console.log('Mail transporter verified successfully');
-  } catch (error) {
-    mailTransportReady = false;
-    console.error('Mail transporter verification failed:', error.message);
+  for (let index = 0; index < transporters.length; index++) {
+    try {
+      await transporters[index].verify();
+      activeTransporterIndex = index;
+      mailTransportReady = true;
+      console.log(`Mail transporter verified successfully using option ${index + 1}/${transporters.length}`);
+      return;
+    } catch (error) {
+      console.error(`Mail transporter verification failed for option ${index + 1}/${transporters.length}:`, error.message);
+    }
   }
+
+  activeTransporterIndex = -1;
+  mailTransportReady = false;
 }
 
 // מוודא לפני כל שליחה שהחיבור לשרת המיילים תקין, גם אם בזמן העלייה הראשונית הוא עוד לא היה מוכן.
 async function ensureMailTransportReady() {
-  if (!transporter) {
+  if (!transporters.length) {
     return false;
   }
 
@@ -83,6 +153,15 @@ async function ensureMailTransportReady() {
   }
 
   return mailTransportReady;
+}
+
+// מחזיר את חיבור המייל הפעיל שנמצא תקין לאחר תהליך האימות.
+function getActiveTransporter() {
+  if (!mailTransportReady || activeTransporterIndex < 0) {
+    return null;
+  }
+
+  return transporters[activeTransporterIndex] || null;
 }
 
 // מחזיר כתובת שולח אחידה לכל המיילים שהמערכת מפיקה.
@@ -156,17 +235,19 @@ function mapDuplicateReason(reason) {
 
 // שולח מייל עם timeout כדי שלא ניתקע לנצח במקרה של בעיית SMTP או רשת.
 async function sendEmail(mailOptions) {
-  if (!transporter) {
+  const activeTransporter = getActiveTransporter();
+
+  if (!activeTransporter) {
     console.warn('Skipped sending email: transporter is disabled');
     return {
       success: false,
-      error: 'Mail transporter is disabled'
+      error: 'Mail transporter is not ready'
     };
   }
 
   try {
     const sendResult = await Promise.race([
-      transporter.sendMail(mailOptions),
+      activeTransporter.sendMail(mailOptions),
       new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Mail send timeout after 15 seconds')), 15000);
       })
@@ -214,6 +295,7 @@ async function sendEmailWithRetry(mailOptions, maxAttempts = 2) {
 
     if (attempt < maxAttempts) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      activeTransporterIndex = -1;
       mailTransportReady = false;
     }
   }
@@ -442,6 +524,8 @@ app.get('/api/health', async (req, res) => {
     managerEmailConfigured: Boolean(MANAGER_EMAIL),
     mailConfigured: Boolean(MAIL_USER && MAIL_PASSWORD && MANAGER_EMAIL),
     mailTransportReady,
+    mailTransportOptions: transporters.length,
+    activeMailTransportOption: activeTransporterIndex >= 0 ? activeTransporterIndex + 1 : 0,
     timestamp: new Date().toISOString()
   });
 });
